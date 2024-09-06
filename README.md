@@ -24,12 +24,12 @@ Tilde Desktop is a lightweight, customizable desktop environment designed for Un
 A powerful terminal emulator built for speed and ease of use. It supports custom themes and plugins to enhance productivity.
 
 ### Tilde File Manager
-![Tilde File Manager](https://example.com/card2.png)
+![Tilde File Manager](ringsce_new.png)
 
 An efficient file manager with a dual-pane interface, allowing for quick file operations and easy navigation.
 
 ### Tilde Editor
-![Tilde Editor](RINGSCE_v2.png)
+![Tilde Editor](ringsce_new.png)
 
 A lightweight text editor that supports syntax highlighting, multiple programming languages, and various extensions for developers.
 
