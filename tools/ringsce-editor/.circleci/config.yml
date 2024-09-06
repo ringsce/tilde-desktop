@@ -1,0 +1,797 @@
+# This code is licensed from CircleCI to the user under the MIT license.
+# See here for details: https://circleci.com/developer/orbs/licensing
+version: 2.1
+description: |
+    Build Lazarus projects on a Windows or Linux VM.
+    Choose from multiple Lazarus versions, with the option to install a cross-compiler for x86 Windows targets.
+    Run lazbuild in Debug, Release or Default configurations. Linux environments will have access to the complete FPC toolchain.
+display:
+    home_url: https://www.lazarus-ide.org
+    source_url: https://www.bitbucket.org/rdipardo/lazarus-orb
+commands:
+    install:
+        description: |
+            Install a selected version of the Lazarus build tools.
+            The Windows platform optionally supports a cross compiler for x86 targets. All installations will support x86_64 targets by default.
+        parameters:
+            generate-shims:
+                default: false
+                description: |
+                    Create shims for the Command Prompt and PowerShell so that 'fpc', 'instantfpc' and 'fppkg' can be invoked from any directory. This option is ignored when the platform is not Windows.
+                type: boolean
+            lazarus-version:
+                default: 3.0.0
+                description: |
+                    The version of Lazarus to install, e.g., "2.0.12". For a list of available releases, visit https://sourceforge.net/projects/lazarus/files
+                type: string
+            packages:
+                default: ""
+                description: |
+                    A list of source packages to build with the Lazarus project. (Note that building most packages requires at least Lazarus 2.0.0. Package installation will fail if the Lazarus version is less than 1.8).
+                    Package names must be separated by spaces only. Names are expected to match the package listing at https://packages.lazarus-ide.org
+                type: string
+            platform:
+                default: windows
+                description: |
+                    The target platform of the Lazarus project: can be 'windows' or 'linux'
+                enum:
+                    - windows
+                    - linux
+                type: enum
+            win32:
+                default: false
+                description: |
+                    Install a cross compiler for x86 Windows targets? Available for Lazarus versions 1.2 and greater; any earlier version will fail to install. This option is ignored when the platform is not Windows.
+                type: boolean
+        steps:
+            - restore_cache:
+                keys:
+                    - lazarus-<< parameters.platform >>-v<< parameters.lazarus-version >>
+                    - lazarus-<< parameters.platform >>
+            - when:
+                condition:
+                    equal:
+                        - linux
+                        - << parameters.platform >>
+                steps:
+                    - run:
+                        command: |
+                            (cat \<<'BASH'
+                            [ -z "${*// /}" ] && exit 0
+
+                            case "$LAZARUS_VERSION" in
+                              '3.0.0'  | '2.2.6'  | '2.2.4' | '2.2.2' | '2.2.0' ) ;;
+                              '2.0.12' | '2.0.10' | '2.0.8' | '2.0.6' | '2.0.4' | '2.0.2' | '2.0.0' ) ;;
+                              '1.8.4'  | '1.8.2'  | '1.8.0' ) ;;
+                              *)
+                                echo 'Lazarus >= 1.7 is required for the --add-package-link command.'
+                                echo 'See https://wiki.lazarus.freepascal.org/lazbuild#Options'
+                                exit 1
+                              ;;
+                            esac
+
+                            PKG_REPO='https://packages.lazarus-ide.org'
+                            PKG_LIST_SRC='packagelist.json'
+                            PKG_LIST='/tmp/packagelist.json'
+                            DL_PATH="/tmp/lazarus-src"
+
+                            if [ -z "$WINDIR" ]; then
+                              if [[ $EUID == 0 ]]; then export SUDO=''; else export SUDO='sudo'; fi
+                              if ! [[ -x $(command -v jq) ]]; then $SUDO apt -qqy install jq; fi
+                              if ! [[ -x $(command -v unzip) ]]; then $SUDO apt -qqy install unzip; fi
+                            elif ! [[ -x $(command -v jq) ]]; then
+                                curl -LS 'https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe' -so 'jq.exe'
+                            fi
+
+                            _get_package() {
+                              [ -f "$PKG_LIST" ] || curl -sL "${PKG_REPO}/${PKG_LIST_SRC}" -o "${PKG_LIST}"
+                              PKG_SRC=
+                              PKG_NAME=$(jq -Mcr ".. | select((.Name|split(\".lpk\")[0]|ascii_downcase)==\"${1,,}\")? |\
+                                         .Name | strings" ${PKG_LIST})
+
+                              if [ -n "$PKG_NAME" ]; then
+                                PKG_SRC=$(jq -Mcr ".. | select((.Name|ascii_downcase)==(\"${PKG_NAME%[Pp]ack*}\"|ascii_downcase))? |\
+                                          .RepositoryFileName | strings" ${PKG_LIST})
+                              fi
+
+                              if [ -n "$PKG_SRC" ]; then
+                                PKG_SRC="${PKG_SRC// /}"
+                                echo "Fetching $PKG_SRC . . . "
+                                PKG_DIR="$DL_PATH/${PKG_SRC%\.zip}"
+
+                                if [ ! -d "$PKG_DIR" ]; then
+                                  if [ ! -f "$DL_PATH/$PKG_SRC" ]; then
+                                    curl -LS "${PKG_REPO}/${PKG_SRC}" -so "$DL_PATH/$PKG_SRC" --create-dirs
+                                  fi
+                                  if [ -z "$WINDIR" ]; then
+                                    unzip -qqo "$DL_PATH/$PKG_SRC" -d "$PKG_DIR"
+                                  else
+                                    7z x "$DL_PATH/$PKG_SRC" -o"$PKG_DIR" -y >NUL:
+                                  fi
+                                fi
+
+                                while IFS= read -r LPK; do
+                                  PKG_DEPS=$(jq -Mcr ".. | select((.Name|ascii_downcase)==(\"$(basename $LPK)\"|ascii_downcase))? |\
+                                            .DependenciesAsString" ${PKG_LIST})
+
+                                  IFS=', '
+                                  read -ra DEPS\<<<"$PKG_DEPS"
+                                  for DEP in "${DEPS[@]}"; do
+                                    DEP_PKG="${DEP%_pack*}"
+                                    case "${DEP_PKG,,}" in
+                                      # circular reference
+                                      "${1,,}" )
+                                        ;;
+                                      # builtin packages
+                                      *'lcl'* | *'fcl'* | *'laz'* | *'intf' )
+                                        ;;
+                                      *)
+                                        echo "$1 depends on ${DEP_PKG}"
+                                        _get_package "$DEP_PKG"
+                                        ;;
+                                    esac
+                                  done
+                                  IFS=
+                                done < <(/usr/bin/find "$PKG_DIR" -type f -iname '*.lpk' -print)
+
+                              else
+                                printf "\n%s %s\n\n" "WARNING: Can't find package" "$1"
+                              fi
+                            }
+
+                            set -e
+                            for PKG in "$@"; do
+                              _get_package "$PKG"
+                              while IFS= read -r LPK; do
+                                lazbuild --add-package-link "$LPK"
+                              done < <(/usr/bin/find "$DL_PATH" -type f -iname '*.lpk' -print)
+                            done
+                            BASH
+                            ) > pkg_install.sh
+                        name: Generate package install script
+                    - run:
+                        command: |
+                            #
+                            # List of Lazarus installation candidates copied from
+                            # https://github.com/gcarreno/setup-lazarus/blob/master/src/Lazarus.ts
+                            # Copyright (c) 2020 Gustavo Carreno, MIT License
+                            #
+                            ARCH='amd64'
+                            RELEASE="$LAZARUS_VERSION-0"
+                            LAZ_PREFIX=
+                            FPC_PREFIX=
+                            FPC=
+                            FPC_SRC=
+
+                            # https://circleci.com/docs/2.0/orbs-best-practices/#check-for-root
+                            if [[ $EUID == 0 ]]; then export SUDO=''; else export SUDO='sudo'; fi
+
+                            _install () {
+                              DIST="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20${ARCH}%20DEB/Lazarus%20${LAZARUS_VERSION}"
+                              DL_PATH="/tmp/lazarus-src"
+
+                              set -e
+                              $SUDO rm -rf /var/lib/apt/lists/ ~/.lazarus/
+                              $SUDO apt clean
+                              $SUDO apt --allow-releaseinfo-change -qq update
+                              $SUDO apt install -qqy curl
+
+                              for pkg in "$1" "$2" "$3"; do
+                                if [ ! -f "$DL_PATH/$pkg" ]; then
+                                  curl -LS "$DIST/$pkg" -so "$DL_PATH/$pkg" --create-dirs
+                                fi
+                                $SUDO apt install --reinstall -y "$DL_PATH/$pkg"
+                              done
+                            }
+
+                            case "$LAZARUS_VERSION" in
+                              '3.0.0' | '2.2.6' | '2.2.4' | '2.2.2' | '2.2.0')
+                                test "$LAZARUS_VERSION" = '3.0.0' && LAZARUS_VERSION='3.0'
+                                FPC='3.2.2-210709'
+                                FPC_SRC=$FPC
+                                FPC_PREFIX='-laz'
+                                LAZ_PREFIX='-project'
+                                ;;
+                              '2.0.12' | '2.0.10')
+                                FPC='3.2.0-1'
+                                FPC_SRC=$FPC
+                                FPC_PREFIX='-laz'
+                                LAZ_PREFIX='-project'
+                                ;;
+                              '2.0.8' | '2.0.6' | '2.0.4' | '2.0.2' | '2.0.0')
+                                FPC='3.0.4-1'
+                                FPC_SRC='3.0.4-2'
+                                FPC_PREFIX='-laz'
+                                LAZ_PREFIX='-project'
+                                ;;
+                              '1.8.4')
+                                FPC='3.0.4-3'
+                                FPC_SRC='3.0.4-2'
+                                LAZ_PREFIX='-project'
+                                ;;
+                              '1.8.2' | '1.8.0')
+                                test "$LAZARUS_VERSION" = '1.8.0' && RELEASE="$LAZARUS_VERSION-1"
+                                FPC='3.0.4-2'
+                                FPC_SRC=$FPC
+                                LAZ_PREFIX='-project'
+                                ;;
+                              '1.6.4')
+                                FPC='3.0.2-170225'
+                                FPC_SRC=$FPC
+                                LAZ_PREFIX='-project'
+                                ;;
+                              '1.6.2' | '1.6')
+                                test "$LAZARUS_VERSION" = '1.6.2' && RELEASE="$LAZARUS_VERSION-1" && LAZ_PREFIX='-project'
+                                # Installer file names always use semantic versions; download paths do not!
+                                test "$LAZARUS_VERSION" = '1.6' && RELEASE="1.6.0-0"
+                                FPC='3.0.0-151205'
+                                FPC_SRC=$FPC
+                                ;;
+                              '1.4.4' | '1.4.2' | '1.4')
+                                test "$LAZARUS_VERSION" = '1.4' && RELEASE="1.4.0-0"
+                                FPC='2.6.4-150228'
+                                FPC_SRC=$FPC
+                                ;;
+                              '1.2.6' | '1.2.4' | '1.2.2')
+                                FPC='2.6.4-140420'
+                                FPC_SRC=$FPC
+                                ;;
+                              '1.2' | '1.0.14' | '1.0.12')
+                                test "$LAZARUS_VERSION" = '1.2' && RELEASE="1.2.0-0"
+                                FPC='2.6.2-0'
+                                FPC_SRC=$FPC
+                                ;;
+                              *)
+                                echo "Unsupported version: '$LAZARUS_VERSION'"
+                                exit 1
+                                ;;
+                            esac
+
+                            echo "Installing Lazarus $LAZARUS_VERSION ($ARCH)"
+                            _install "fpc${FPC_PREFIX}_${FPC}_${ARCH}.deb" "fpc-src_${FPC_SRC}_${ARCH}.deb" "lazarus${LAZ_PREFIX}_${RELEASE}_${ARCH}.deb"
+                        environment:
+                            LAZARUS_VERSION: << parameters.lazarus-version >>
+                        name: Install Lazarus << parameters.lazarus-version >>
+                    - run:
+                        command: |
+                            perl -e '@pkgs=split(m/(?<![\-])\s+(?![0-9\-])(?![Vv][0-9])/, "<< parameters.packages >>");
+                              foreach $p ( @pkgs ) { system("bash ./pkg_install.sh \"$p\"") }'
+                        environment:
+                            LAZARUS_VERSION: << parameters.lazarus-version >>
+                        name: Install packages
+                    - save_cache:
+                        key: lazarus-<< parameters.platform >>-v<< parameters.lazarus-version >>
+                        paths:
+                            - /tmp/lazarus-src
+            - when:
+                condition:
+                    equal:
+                        - windows
+                        - << parameters.platform >>
+                steps:
+                    - run:
+                        command: |
+                            (cat \<<BATCH
+                            @echo on
+                            ::
+                            :: List of Lazarus installation candidates copied from
+                            :: https://github.com/gcarreno/setup-lazarus/blob/master/src/Lazarus.ts
+                            :: Copyright (c) 2020 Gustavo Carreno, MIT License
+                            ::
+                            @SETLOCAL
+                            @SET "LazarusDir=C:\lazarus\%LAZARUS_VERSION%"
+                            @SET "DIST=https://sourceforge.net/projects/lazarus/files/Lazarus%%20Windows%%2064%%20bits/Lazarus%%20%LAZARUS_VERSION%"
+                            @SET "DL_PATH=C:\lazarus-src"
+
+                            @GOTO :v%LAZARUS_VERSION% || ( @echo Unsupported version: "%LAZARUS_VERSION%" & @GOTO :DONE )
+
+                            :: Match the correct FPC version with each Lazarus release
+                            :v3.0.0
+                            @SET "LAZARUS_VERSION=3.0"
+                            @SET "LazarusDir=C:\lazarus\%LAZARUS_VERSION%"
+                            @SET "DIST=https://sourceforge.net/projects/lazarus/files/Lazarus%%20Windows%%2064%%20bits/Lazarus%%20%LAZARUS_VERSION%"
+                            :v2.2.6
+                            :v2.2.4
+                            :v2.2.2
+                            :v2.2.0
+                            @SET "FPC=3.2.2"
+                            @GOTO :INSTALL
+
+                            :v2.0.12
+                            :v2.0.10
+                            @SET "FPC=3.2.0"
+                            @GOTO :INSTALL
+
+                            :v2.0.8
+                            :v2.0.6
+                            :v2.0.4
+                            :v2.0.2
+                            :v2.0.0
+                            :v1.8.4
+                            :v1.8.2
+                            :v1.8.0
+                            @SET "FPC=3.0.4"
+                            @GOTO :INSTALL
+
+                            :v1.6.4
+                            @SET "FPC=3.0.2"
+                            @GOTO :INSTALL
+
+                            :v1.6.2
+                            :v1.6
+                            @SET "FPC=3.0.0"
+                            :: Installer file names always use semantic versions; download paths do not!
+                            @IF "%LAZARUS_VERSION%"=="1.6" ( @SET "LAZARUS_VERSION=1.6.0" )
+                            @GOTO :INSTALL
+
+                            :v1.4.4
+                            :v1.4.2
+                            :v1.4
+                            :v1.2.6
+                            :v1.2.4
+                            :v1.2.2
+                            @SET "FPC=2.6.4"
+                            @IF "%LAZARUS_VERSION%"=="1.4" ( @SET "LAZARUS_VERSION=1.4.0" )
+                            @GOTO :INSTALL
+
+                            :v1.2
+                            :v1.0.14
+                            :v1.0.12
+                            @SET "FPC=2.6.2"
+                            @IF "%LAZARUS_VERSION%"=="1.2" ( @SET "LAZARUS_VERSION=1.2.0" )
+                            @GOTO :INSTALL
+
+                            :INSTALL
+                            @SET "FPC_PATH=%LazarusDir%\fpc\%FPC%"
+                            :: Cached installation exists?
+                            @IF EXIST %FPC_PATH% ( @GOTO :XTOOLS )
+
+                            @SET "INSTALLER=%DIST%/lazarus-%LAZARUS_VERSION%-fpc-%FPC%-win64.exe"
+                            @SET "LAZARUS_EXE=%DL_PATH%\lazarus-%LAZARUS_VERSION%-installer.exe"
+
+                            @echo Installing Lazarus %LAZARUS_VERSION%
+                            @IF NOT EXIST "%DL_PATH%" ( md "%DL_PATH%" )
+                            @IF NOT EXIST %LAZARUS_EXE% ( curl -LS "%INSTALLER%" -so %LAZARUS_EXE% )
+                            %LAZARUS_EXE% /VERYSILENT /DIR=%LazarusDir%
+
+                            :XTOOLS
+                            :: Cached cross-compiler installation exists?
+                            @IF EXIST %FPC_PATH%\units\i386-win32 ( @GOTO :FINISH )
+
+                            @SET "INSTALLER=%DIST%/lazarus-%LAZARUS_VERSION%-fpc-%FPC%-cross-i386-win32-win64.exe"
+                            @SET "LAZARUS_EXE=%DL_PATH%\lazarus-%LAZARUS_VERSION%-cross-tools-installer.exe"
+
+                            :: No Windows cross tools before v1.2.0
+                            @IF "%LAZARUS_VERSION%"=="1.0.14" ( @SET "NO_CROSS_TOOLS=true" )
+                            @IF "%LAZARUS_VERSION%"=="1.0.12" ( @SET "NO_CROSS_TOOLS=true" )
+
+                            @IF NOT "%CROSS_BUILD%"=="" (
+                              @IF "%NO_CROSS_TOOLS%"== "true" ( @echo No cross tools available for Lazarus %LAZARUS_VERSION% & @GOTO :DONE )
+
+                              @echo Installing x86 cross tools for Lazarus %LAZARUS_VERSION%
+                              @IF NOT EXIST %LAZARUS_EXE% ( curl -LS "%INSTALLER%" -so %LAZARUS_EXE% )
+                              %LAZARUS_EXE% /VERYSILENT /DIR=%LazarusDir%
+                            )
+
+                            :FINISH
+                            "%FPC_PATH%\bin\x86_64-win64\fpcmkcfg.exe" -d "basepath=%FPC_PATH%" -o "%FPC_PATH%\bin\x86_64-win64\fpc.cfg"
+                            :: Hack to make sure the primary config directory reflects the current version
+                            "%LazarusDir%\lazbuild.exe" --build-ide= >NUL:
+
+                            :: Make current version of lazbuild visible to system PATH
+                            @SET "LAZBUILD_LNK=%WINDIR%\lazbuild.exe"
+                            @IF EXIST %LAZBUILD_LNK% ( DEL /Q %LAZBUILD_LNK% )
+                            mklink /h %LAZBUILD_LNK% "%LazarusDir%\lazbuild.exe"
+
+                            :: Use shims until we learn how to put the "real" compiler on the PATH permanently
+                            @echo %PATH%;%LazarusDir%;%FPC_PATH%\bin\x86_64-win64> lazpath.txt
+
+                            @echo Installed Lazarus version:
+                            lazbuild -v
+
+                            :DONE
+                            @ENDLOCAL
+                            BATCH
+                            ) > install.cmd
+                        name: Generate install script
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            (cat \<<'BASH'
+                            [ -z "${*// /}" ] && exit 0
+
+                            case "$LAZARUS_VERSION" in
+                              '3.0.0'  | '2.2.6'  | '2.2.4' | '2.2.2' | '2.2.0' ) ;;
+                              '2.0.12' | '2.0.10' | '2.0.8' | '2.0.6' | '2.0.4' | '2.0.2' | '2.0.0' ) ;;
+                              '1.8.4'  | '1.8.2'  | '1.8.0' ) ;;
+                              *)
+                                echo 'Lazarus >= 1.7 is required for the --add-package-link command.'
+                                echo 'See https://wiki.lazarus.freepascal.org/lazbuild#Options'
+                                exit 1
+                              ;;
+                            esac
+
+                            PKG_REPO='https://packages.lazarus-ide.org'
+                            PKG_LIST_SRC='packagelist.json'
+                            PKG_LIST='/tmp/packagelist.json'
+                            DL_PATH="/tmp/lazarus-src"
+
+                            if [ -z "$WINDIR" ]; then
+                              if [[ $EUID == 0 ]]; then export SUDO=''; else export SUDO='sudo'; fi
+                              if ! [[ -x $(command -v jq) ]]; then $SUDO apt -qqy install jq; fi
+                              if ! [[ -x $(command -v unzip) ]]; then $SUDO apt -qqy install unzip; fi
+                            elif ! [[ -x $(command -v jq) ]]; then
+                                curl -LS 'https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe' -so 'jq.exe'
+                            fi
+
+                            _get_package() {
+                              [ -f "$PKG_LIST" ] || curl -sL "${PKG_REPO}/${PKG_LIST_SRC}" -o "${PKG_LIST}"
+                              PKG_SRC=
+                              PKG_NAME=$(jq -Mcr ".. | select((.Name|split(\".lpk\")[0]|ascii_downcase)==\"${1,,}\")? |\
+                                         .Name | strings" ${PKG_LIST})
+
+                              if [ -n "$PKG_NAME" ]; then
+                                PKG_SRC=$(jq -Mcr ".. | select((.Name|ascii_downcase)==(\"${PKG_NAME%[Pp]ack*}\"|ascii_downcase))? |\
+                                          .RepositoryFileName | strings" ${PKG_LIST})
+                              fi
+
+                              if [ -n "$PKG_SRC" ]; then
+                                PKG_SRC="${PKG_SRC// /}"
+                                echo "Fetching $PKG_SRC . . . "
+                                PKG_DIR="$DL_PATH/${PKG_SRC%\.zip}"
+
+                                if [ ! -d "$PKG_DIR" ]; then
+                                  if [ ! -f "$DL_PATH/$PKG_SRC" ]; then
+                                    curl -LS "${PKG_REPO}/${PKG_SRC}" -so "$DL_PATH/$PKG_SRC" --create-dirs
+                                  fi
+                                  if [ -z "$WINDIR" ]; then
+                                    unzip -qqo "$DL_PATH/$PKG_SRC" -d "$PKG_DIR"
+                                  else
+                                    7z x "$DL_PATH/$PKG_SRC" -o"$PKG_DIR" -y >NUL:
+                                  fi
+                                fi
+
+                                while IFS= read -r LPK; do
+                                  PKG_DEPS=$(jq -Mcr ".. | select((.Name|ascii_downcase)==(\"$(basename $LPK)\"|ascii_downcase))? |\
+                                            .DependenciesAsString" ${PKG_LIST})
+
+                                  IFS=', '
+                                  read -ra DEPS\<<<"$PKG_DEPS"
+                                  for DEP in "${DEPS[@]}"; do
+                                    DEP_PKG="${DEP%_pack*}"
+                                    case "${DEP_PKG,,}" in
+                                      # circular reference
+                                      "${1,,}" )
+                                        ;;
+                                      # builtin packages
+                                      *'lcl'* | *'fcl'* | *'laz'* | *'intf' )
+                                        ;;
+                                      *)
+                                        echo "$1 depends on ${DEP_PKG}"
+                                        _get_package "$DEP_PKG"
+                                        ;;
+                                    esac
+                                  done
+                                  IFS=
+                                done < <(/usr/bin/find "$PKG_DIR" -type f -iname '*.lpk' -print)
+
+                              else
+                                printf "\n%s %s\n\n" "WARNING: Can't find package" "$1"
+                              fi
+                            }
+
+                            set -e
+                            for PKG in "$@"; do
+                              _get_package "$PKG"
+                              while IFS= read -r LPK; do
+                                lazbuild --add-package-link "$LPK"
+                              done < <(/usr/bin/find "$DL_PATH" -type f -iname '*.lpk' -print)
+                            done
+                            BASH
+                            ) > pkg_install.sh
+                        name: Generate package install script
+                        shell: bash.exe
+                    - run:
+                        command: install.cmd
+                        environment:
+                            CROSS_BUILD: << parameters.win32 >>
+                            LAZARUS_VERSION: << parameters.lazarus-version >>
+                        name: Install Lazarus << parameters.lazarus-version >>
+                        shell: cmd.exe
+                    - when:
+                        condition: << parameters.generate-shims >>
+                        steps:
+                            - run:
+                                command: |
+                                    # Must be run *after* install.cmd
+                                    if [[ ! -f lazpath.txt ]]; then
+                                      echo 'Cannot find the path to your Lazarus installation!'
+                                      exit 1
+                                    fi
+
+                                    set -e
+                                    gen_cmd_shim () {
+                                      cat\<<BATCH > "$WINDIR/$1.cmd"
+                                    @echo off
+                                    @set "PATH=$(<lazpath.txt)"
+                                    $1.exe %*
+                                    BATCH
+                                    }
+
+                                    gen_ps1_shim () {
+                                      cat\<<PS > "$WINDIR/$1.ps1"
+                                    \$env:PATH = "$(<lazpath.txt)"
+                                    $1.exe @Args
+                                    PS
+                                    }
+
+                                    gen_cmd_shim 'fpc'
+                                    gen_cmd_shim 'fppkg'
+                                    gen_cmd_shim 'instantfpc'
+                                    gen_ps1_shim 'fpc'
+                                    gen_ps1_shim 'fppkg'
+                                    gen_ps1_shim 'instantfpc'
+                                name: Generate shims
+                                shell: bash.exe
+                    - run:
+                        command: |
+                            perl -e '@pkgs=split(m/(?<![\-])\s+(?![0-9\-])(?![Vv][0-9])/, "<< parameters.packages >>");
+                              foreach $p ( @pkgs ) { system("bash ./pkg_install.sh \"$p\"") }'
+                        environment:
+                            LAZARUS_VERSION: << parameters.lazarus-version >>
+                        name: Install packages
+                        shell: bash.exe
+                    - save_cache:
+                        key: lazarus-<< parameters.platform >>-v<< parameters.lazarus-version >>
+                        paths:
+                            - C:\lazarus-src
+jobs:
+    build-linux:
+        description: |
+            Convenience job that installs a selected version of Lazarus and builds a project for 64-bit Linux targets. If any package dependencies are included as submodules, they will be cloned with the project.
+        machine:
+            image: ubuntu-<< parameters.machine-version >>:current
+            resource_class: large
+        parameters:
+            bin-dir:
+                default: .
+                description: |
+                    Path to the build artifact directory. Persisted to a workspace so downstream jobs can make use of build artifacts
+                type: string
+            build-type:
+                default: Default
+                description: Build mode configuration (Release, Debug or Default)
+                enum:
+                    - Release
+                    - Debug
+                    - Default
+                type: enum
+            lazarus-version:
+                default: 3.0.0
+                description: |
+                    The version of Lazarus to install, e.g., "2.0.12". For a list of available releases, visit https://sourceforge.net/projects/lazarus/files
+                type: string
+            machine-version:
+                default: "2204"
+                description: |
+                    The LTS release version of the image the build will run on: can be '2004' for Ubuntu 20.04, or '2204' for Ubuntu 22.04. Lazarus 3.0 or later requires at least Ubuntu 22.04.
+                enum:
+                    - "2204"
+                    - "2004"
+                type: enum
+            packages:
+                default: ""
+                description: |
+                    A list of source packages to build with the Lazarus project. (Note that building most packages requires at least Lazarus 2.0.0. Package installation will fail if the Lazarus version is less than 1.8).
+                    Package names must be separated by spaces only. Names are expected to match the package listing at https://packages.lazarus-ide.org
+                type: string
+            project:
+                description: Name of Lazarus project to build -- do not include a file extension!
+                type: string
+            project-dir:
+                default: .
+                description: |
+                    Path to the Lazarus project's *.lpi file
+                type: string
+        steps:
+            - checkout
+            - run:
+                command: |
+                    git reset --hard
+                    git submodule sync --recursive
+                    git submodule update --init --recursive
+                name: Clone submodules
+            - install:
+                lazarus-version: << parameters.lazarus-version >>
+                packages: << parameters.packages >>
+                platform: linux
+            - run:
+                command: |
+                    lazbuild -B --bm=<<parameters.build-type>> <<parameters.project>>.lpi
+                name: << parameters.build-type >> Build
+                working_directory: << parameters.project-dir >>
+            - persist_to_workspace:
+                paths:
+                    - << parameters.bin-dir >>
+                root: .
+    build-win:
+        description: |
+            Convenience job that installs a selected version of Lazarus, with an optional cross compiler for x86 Windows targets, and builds a project with lazbuild. If any package dependencies are included as submodules, they will be cloned with the project.
+        machine:
+            image: windows-server-2022-gui:current
+            resource_class: windows.medium
+            shell: cmd.exe
+        parameters:
+            bin-dir:
+                default: .
+                description: |
+                    Path to the build artifact directory. Persisted to a workspace so downstream jobs can make use of build artifacts
+                type: string
+            build-type:
+                default: Default
+                description: Build mode configuration (Release, Debug or Default)
+                enum:
+                    - Release
+                    - Debug
+                    - Default
+                type: enum
+            cross-build:
+                default: false
+                description: Build for x86 Windows targets?
+                type: boolean
+            generate-shims:
+                default: false
+                description: Create shims for 'fpc', 'instantfpc' and 'fppkg' when installing Lazarus
+                type: boolean
+            lazarus-version:
+                default: 3.0.0
+                description: |
+                    The version of Lazarus to install, e.g., "2.0.12". For a list of available releases, visit https://sourceforge.net/projects/lazarus/files
+                type: string
+            packages:
+                default: ""
+                description: |
+                    A list of source packages to build with the Lazarus project. (Note that building most packages requires at least Lazarus 2.0.0. Package installation will fail if the Lazarus version is less than 1.8).
+                    Package names must be separated by spaces only. Names are expected to match the package listing at https://packages.lazarus-ide.org
+                type: string
+            project:
+                description: Name of Lazarus project to build -- do not include a file extension!
+                type: string
+            project-dir:
+                default: .
+                description: |
+                    Path to the Lazarus project's *.lpi file
+                type: string
+        steps:
+            - checkout
+            - run:
+                command: |
+                    git reset --hard
+                    git submodule sync --recursive
+                    git submodule update --init --recursive
+                name: Clone submodules
+                shell: bash.exe
+            - install:
+                generate-shims: << parameters.generate-shims >>
+                lazarus-version: << parameters.lazarus-version >>
+                packages: << parameters.packages >>
+                platform: windows
+                win32: << parameters.cross-build >>
+            - run:
+                command: |
+                    lazbuild -B --bm=<<parameters.build-type>> <<parameters.project>>.lpi
+                name: << parameters.build-type >> Build
+                working_directory: << parameters.project-dir >>
+            - when:
+                condition: << parameters.cross-build >>
+                steps:
+                    - run:
+                        command: |
+                            lazbuild -B --bm=<<parameters.build-type>> --cpu=i386 <<parameters.project>>.lpi
+                        name: << parameters.build-type >> Build for x86
+                        working_directory: << parameters.project-dir >>
+            - persist_to_workspace:
+                paths:
+                    - << parameters.bin-dir >>
+                root: .
+examples:
+    linux-build:
+        description: |
+            Building a Lazarus project for 64-bit Linux, in a single job.
+        usage:
+            version: "2.1"
+            orbs:
+                lazarus: rdipardo/lazarus@3
+            workflows:
+                linux-build:
+                    jobs:
+                        - lazarus/build-linux:
+                            packages: ATSynEdit_Ex RichMemo Synapse 40.1
+                            project: HelloLazarus
+    linux-fpc:
+        description: |
+            Installing Lazarus and using the Free Pascal toolchain on Linux.
+        usage:
+            version: "2.1"
+            orbs:
+                lazarus: rdipardo/lazarus@3
+            jobs:
+                build-and-run:
+                    docker:
+                        - image: ubuntu:latest
+                    steps:
+                        - checkout
+                        - lazarus/install:
+                            lazarus-version: 2.0.10
+                            platform: linux
+                        - run:
+                            command: instantfpc program.pas
+                            name: Build and run a Free Pascal program
+            workflows:
+                linux-fpc:
+                    jobs:
+                        - build-and-run
+    windows-cross-build:
+        description: |
+            Building a Lazarus project for x86 and x64 Windows in debug mode.
+            It's assumed the project's *.lpi file defines multiple build modes.
+            See https://wiki.lazarus.freepascal.org/IDE_Window:__Compiler_Options#Build_modes
+        usage:
+            version: "2.1"
+            orbs:
+                lazarus: rdipardo/lazarus@3
+                win: circleci/windows@5
+            jobs:
+                debug-run:
+                    executor:
+                        name: win/default
+                    steps:
+                        - attach_workspace:
+                            at: C:\output
+                        - run:
+                            command: C:\output\Debug\x86_64-win64\HelloLazarus.exe
+                            name: Run the x86_64 Application
+                        - run:
+                            command: C:\output\Debug\i386-win32\HelloLazarus.exe
+                            name: Run the x86 Application
+            workflows:
+                windows-cross-build:
+                    jobs:
+                        - lazarus/build-win:
+                            bin-dir: bin
+                            build-type: Debug
+                            cross-build: true
+                            lazarus-version: 2.0.12
+                            packages: CEF4Delphi Emmet-Pascal VirtualTreeView V5
+                            project: HelloLazarus
+                            project-dir: src
+                        - debug-run:
+                            requires:
+                                - lazarus/build-win
+    windows-fpc:
+        description: |
+            Installing Lazarus and using the Free Pascal toolchain on Windows.
+        usage:
+            version: "2.1"
+            orbs:
+                lazarus: rdipardo/lazarus@3
+                win: circleci/windows@5
+            jobs:
+                compile-and-run:
+                    executor:
+                        name: win/default
+                    steps:
+                        - checkout
+                        - lazarus/install:
+                            generate-shims: true
+                            lazarus-version: 3.0.0
+                            platform: windows
+                        - run:
+                            command: instantfpc program.pas
+                            name: Build and run a Free Pascal program
+            workflows:
+                windows-fpc:
+                    jobs:
+                        - compile-and-run
+
+

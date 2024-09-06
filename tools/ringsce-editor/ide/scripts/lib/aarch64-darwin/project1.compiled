@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Compiler Value="/usr/local/bin/fpc" Date="1621181457"/>
+  <Params Value="-Tdarwin -Paarch64 -MObjFPC -Scghi -O1 -gw3 -gl -k-framework -kCocoa -l -vewnhibq -Fi/Users/pedro/Documents/Projects/ringsce-editor/ide/lib/aarch64-darwin -Fu/Users/pedro/fpcupdeluxe/lazarus/components/synedit/units/aarch64-darwin/cocoa -Fu/Users/pedro/fpcupdeluxe/lazarus/lcl/units/aarch64-darwin/cocoa -Fu/Users/pedro/fpcupdeluxe/lazarus/lcl/units/aarch64-darwin -Fu/Users/pedro/fpcupdeluxe/lazarus/components/freetype/lib/aarch64-darwin -Fu/Users/pedro/fpcupdeluxe/lazarus/components/lazutils/lib/aarch64-darwin -Fu/Users/pedro/fpcupdeluxe/lazarus/packager/units/aarch64-darwin -Fu/Users/pedro/Documents/Projects/ringsce-editor/ide/ -FU/Users/pedro/Documents/Projects/ringsce-editor/ide/lib/aarch64-darwin/ -FE/Users/pedro/Documents/Projects/ringsce-editor/ide/ -o/Users/pedro/Documents/Projects/ringsce-editor/ide/project1 -dLCL -dLCLcocoa project1.lpr"/>
+</CONFIG>

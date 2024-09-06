@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CONFIG>
+  <CHeaderFiles Count="2">
+    <File1>
+      <Merge Value="False"/>
+      <Filename Value="../../headers/notepad.h"/>
+    </File1>
+    <File2>
+      <Merge Value="False"/>
+      <Filename Value="../../headers/highlighter.h"/>
+    </File2>
+  </CHeaderFiles>
+  <PreH2PasTools Count="1">
+    <Tool1 Value="object PreH2PasasetofcommontoolstorunbeforeH2Pas: TPreH2PasTools&#xA;end&#xA;"/>
+  </PreH2PasTools>
+  <PostH2PasTools Count="1">
+    <Tool1 Value="object PostH2PasasetofcommontoolstorunafterH2Pas: TPostH2PasTools&#xA;end&#xA;"/>
+  </PostH2PasTools>
+</CONFIG>

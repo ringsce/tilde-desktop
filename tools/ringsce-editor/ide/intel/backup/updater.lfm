@@ -1,0 +1,17 @@
+object Form6: TForm6
+  Left = 240
+  Height = 240
+  Top = 184
+  Width = 320
+  Caption = 'Form6'
+  LCLVersion = '3.0.0.3'
+  object SQLite3Connection1: TSQLite3Connection
+    Connected = False
+    LoginPrompt = False
+    AfterConnect = SQLite3Connection1AfterConnect
+    KeepConnection = False
+    AlwaysUseBigint = False
+    Left = 265
+    Top = 25
+  end
+end
