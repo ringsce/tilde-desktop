@@ -56,6 +56,21 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="TestRunner"/>
       </Unit>
+      <Unit>
+        <Filename Value="kayteparser.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="KayteParser"/>
+      </Unit>
+      <Unit>
+        <Filename Value="virtualmachine.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="VirtualMachine"/>
+      </Unit>
+      <Unit>
+        <Filename Value="xmlparser.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="XMLParser"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
