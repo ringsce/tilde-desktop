@@ -237,7 +237,7 @@ begin
     VM.Run;
 
     // Create a PK3 file from the VM source code
-    CreatePK3File('kings.lpr', 'vm.pk3');
+    CreatePK3File('vm.pas', 'vm.pk3');
   finally
     VM.Free;
   end;

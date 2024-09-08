@@ -3,9 +3,9 @@
     <div class="text-center p-3" style="background-color: #f8f9fa;">
         &copy; 2016 - 2024 Kreatyve Designs. All Rights Reserved.
         <br>
-        <a href="https://github.com/ringsce" target="_blank">GitHub</a> | 
-        <a href="https://mastodon.social/@ringsce" target="_blank">Mastodon</a> | 
-        <a href="https://twitter.com/ringsce" target="_blank">X (Twitter)</a>
+        <a href="#" target="_blank">GitHub</a> | 
+        <a href="#" target="_blank">Mastodon</a> | 
+        <a href="#" target="_blank">X (Twitter)</a>
     </div>
 </footer>
 
