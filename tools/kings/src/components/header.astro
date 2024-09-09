@@ -1,0 +1,91 @@
+<!-- Import SCSS -->
+<style lang="scss">
+  @import '../../styles.scss';
+</style>
+
+<nav class="navbar">
+  <div class="navbar-left">
+    <a href="/" class="logo">
+      <img src="/ringsce.png" alt="Logo" class="logo-image" />
+    </a>
+    <ul>
+      <li><a href="/overview.php">Overview</a></li>
+      <li><a href="/activity.php">Activity</a></li>
+      <li><a href="/roadmap.php">Roadmap</a></li>
+      <li><a href="/issues.php">Issues</a></li>
+      <li><a href="/docs.php">Docs</a></li>
+    </ul>
+  </div>
+  <div class="navbar-right">
+    <ul>
+      <li><a href="/login">Login</a></li>
+      <li><a href="/register.php">Register</a></li>
+    </ul>
+    <div class="search-bar">
+      <input type="text" placeholder="Search..." />
+      <button type="button">Search</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Styling -->
+<style>
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #333;
+    padding: 1rem;
+    color: white;
+  }
+  .navbar-left {
+    display: flex;
+    align-items: center;
+  }
+  .navbar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 1rem;
+  }
+  .navbar a {
+    color: white;
+    text-decoration: none;
+  }
+  .navbar a:hover {
+    text-decoration: underline;
+  }
+  .logo {
+    margin-right: 1rem;
+  }
+  .logo-image {
+    height: 40px; /* Adjust the height as needed */
+  }
+  .navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .search-bar input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  .search-bar button {
+    padding: 0.5rem 1rem;
+    background: #007acc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .search-bar button:hover {
+    background: #005ea8;
+  }
+</style>

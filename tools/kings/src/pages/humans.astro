@@ -1,0 +1,73 @@
+---
+import Header from '../components/header.astro';
+import Footer from '../components/footer.astro';
+import fs from 'fs';
+import path from 'path';
+import { marked } from 'marked'; // Markdown parser
+
+// Define a function to fetch data
+async function getData() {
+  // Load Markdown posts from the posts directory
+  const postsFolder = path.resolve('./src/components/posts');
+  const postFiles = fs.readdirSync(postsFolder).filter(file => file.endsWith('.md'));
+  const humansFile = postFiles.find(file => file === 'humans.md');
+
+  if (!humansFile) {
+    return { title: 'Not Found', date: '', content: 'No content available.' };
+  }
+
+  const filePath = path.join(postsFolder, humansFile);
+  const fileContent = fs.readFileSync(filePath, 'utf-8');
+  const { title, date } = extractMetadata(fileContent); // Extract metadata from front matter
+  const content = marked(fileContent.replace(/(^---[\s\S]*?---\s*)/, '')); // Convert Markdown to HTML, stripping front matter
+
+  return {
+    title: title || 'Untitled',
+    date: date || 'No Date',
+    content
+  };
+}
+
+// Extract metadata from Markdown (example)
+function extractMetadata(content) {
+  const meta = {};
+  const metaRegex = /^---\n([\s\S]*?)\n---/; // Updated regex to handle front matter correctly
+  const match = content.match(metaRegex);
+  if (match) {
+    const metadata = match[1].split('\n').filter(line => line.trim() !== '');
+    metadata.forEach(line => {
+      const [key, value] = line.split(':').map(str => str.trim());
+      if (key && value) meta[key] = value;
+    });
+  }
+  return meta;
+}
+
+// Fetch data in the frontmatter
+const { title, date, content } = await getData();
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A page displaying content from the Markdown file 'humans.md'.">
+    <meta name="generator" content="Astro">
+    <title>{title}</title>
+    <style>
+        /* Include your styles here */
+    </style>
+</head>
+<body>
+    <Header />
+
+    <main>
+        <h1>{title}</h1>
+        <time>{date}</time>
+        <div innerHTML={content} />
+    </main>
+
+    <Footer />
+</body>
+</html>

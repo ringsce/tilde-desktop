@@ -1,0 +1,116 @@
+---
+import { randomBytes } from 'crypto';
+import { Astro } from 'astro';
+
+// Function to generate a CAPTCHA
+const generateCaptcha = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let captcha = '';
+  for (let i = 0; i < 4; i++) {
+    captcha += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return captcha;
+};
+
+// Generate CAPTCHA
+const captcha = generateCaptcha();
+
+// Check for error query parameter
+const url = new URL(Astro.request.url);
+const error = url.searchParams.get('error');
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    .login-container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+    .login-container h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .login-container input[type="text"],
+    .login-container input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .login-container .captcha {
+      font-size: 24px;
+      letter-spacing: 5px;
+      text-align: center;
+      background-color: #e0e0e0;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .login-container input[type="submit"] {
+      width: 100%;
+      padding: 10px;
+      background-color: #007BFF;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .login-container input[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+    .login-container .error {
+      color: red;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>Login</h1>
+    {error && <div class="error">Invalid CAPTCHA, please try again.</div>}
+    <form action="/api/login" method="post">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required>
+      
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+      
+      <div class="captcha">
+        <span>{captcha}</span>
+      </div>
+      <input type="hidden" name="generatedCaptcha" value={captcha}>
+      
+      <label for="captcha">Enter the CAPTCHA:</label>
+      <input type="text" id="captcha" name="captcha" required>
+      
+      <label for="dbType">Select Database:</label>
+      <select id="dbType" name="dbType">
+        <option value="mysql">MySQL</option>
+        <option value="postgres">PostgreSQL</option>
+        <option value="sqlite">SQLite</option>
+      </select>
+      
+      <input type="submit" value="Login">
+    </form>
+  </div>
+</body>
+</html>

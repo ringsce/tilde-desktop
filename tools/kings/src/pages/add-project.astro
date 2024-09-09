@@ -1,0 +1,29 @@
+---
+import { createProject } from '../lib/createProject'; // You'll create this function
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New Project</title>
+</head>
+<body>
+  <h1>Add New Project</h1>
+  <form method="POST" action="/api/add-project">
+    <label>
+      Title:
+      <input type="text" name="title" required />
+    </label>
+    <label>
+      Body:
+      <textarea name="body" required></textarea>
+    </label>
+    <label>
+      Link:
+      <input type="text" name="href" required />
+    </label>
+    <button type="submit">Add Project</button>
+  </form>
+</body>
+</html>

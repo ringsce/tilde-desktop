@@ -1,0 +1,95 @@
+---
+import Header from '../components/header.astro';
+import Footer from '../components/footer.astro';
+
+const url = new URL(Astro.request.url);
+const error = url.searchParams.get('error');
+const success = url.searchParams.get('success');
+---
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup CMS</title>
+  <style>
+    /* Include your styles here */
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    .setup-container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 400px;
+    }
+    .setup-container h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .setup-container input[type="text"],
+    .setup-container input[type="password"],
+    .setup-container input[type="submit"],
+    .setup-container select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .setup-container .error {
+      color: red;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .setup-container .success {
+      color: green;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!--<Header />-->
+
+  <div class="setup-container">
+    <h1>CMS Setup</h1>
+    {error && <div class="error">Error: {error}</div>}
+    {success && <div class="success">Success: {success}</div>}
+    <form action="/api/setup" method="post">
+      <label for="dbType">Database Type:</label>
+      <select id="dbType" name="dbType" required>
+        <option value="mysql">MySQL</option>
+        <option value="postgres">PostgreSQL</option>
+        <option value="sqlite">SQLite</option>
+      </select>
+
+      <label for="host">Host:</label>
+      <input type="text" id="host" name="host" required>
+
+      <label for="port">Port:</label>
+      <input type="text" id="port" name="port">
+
+      <label for="user">User:</label>
+      <input type="text" id="user" name="user" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password">
+
+      <label for="database">Database Name:</label>
+      <input type="text" id="database" name="database" required>
+
+      <input type="submit" value="Setup CMS">
+    </form>
+  </div>
+
+  <!--<Footer />-->
+</body>
+</html>

@@ -1,0 +1,81 @@
+---
+import Footer from '../components/Footer.astro'; // Adjust the path according to your project structure
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor</title>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .header {
+      background-color: #007bff;
+      color: #ffffff;
+      padding: 10px;
+      text-align: center;
+    }
+    .main {
+      display: flex;
+      flex: 1;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: #f4f4f4;
+      padding: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+    }
+    .editor {
+      flex: 1;
+      padding: 20px;
+      background-color: #ffffff;
+    }
+    .button {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      text-align: center;
+      color: #007bff;
+      border: 1px solid #007bff;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+    .button:hover {
+      background-color: #007bff;
+      color: #ffffff;
+    }
+    .project-image {
+      max-width: 100%;
+      height: auto;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <a href="/new-project" class="button">New Project</a>
+    </header>
+    <div class="main">
+      <aside class="sidebar">
+        <a href="/new-project" class="button">New Project</a>
+        <a href="/preview" class="button">Preview</a>
+        <a href="/license" class="button">License</a>
+        <!-- Here we assume `projectImageUrl` is provided as a prop -->
+        <img src={Astro.props.projectImageUrl} alt="Project Cover" class="project-image" />
+      </aside>
+      <div class="editor">
+        <slot></slot> <!-- This will be the editor content -->
+      </div>
+    </div>
+    <!--<Footer />-->
+  </div>
+</body>
+</html>

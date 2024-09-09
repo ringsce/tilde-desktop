@@ -1,0 +1,61 @@
+---
+import { MongoClient } from 'mongodb';
+import { useState } from 'react';
+
+const client = new MongoClient(import.meta.env.MONGO_URI);
+const dbName = 'your-database-name';
+const collectionName = 'your-collection-name';
+
+async function searchDatabase(query) {
+  if (!query) return [];
+
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
+    // Perform the search query on the MongoDB collection
+    const results = await collection.find({ $text: { $search: query } }).toArray();
+
+    return results;
+  } finally {
+    await client.close();
+  }
+}
+
+// Get the search query from the user's input
+const searchQuery = Astro.request.url.searchParams.get('query');
+const [results, setResults] = useState([]);
+
+if (searchQuery) {
+  setResults(await searchDatabase(searchQuery));
+}
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+</head>
+<body>
+    <form action="/search" method="get">
+        <input type="text" name="query" placeholder="Search..." value={searchQuery} />
+        <button type="submit">Search</button>
+    </form>
+
+    <ul>
+      {results.length > 0 ? (
+        results.map(result => (
+          <li key={result._id}>
+            <h2>{result.title}</h2>
+            <p>{result.content}</p>
+          </li>
+        ))
+      ) : (
+        <li>No results found.</li>
+      )}
+    </ul>
+</body>
+</html>
