@@ -82,9 +82,6 @@
       <IncludeFiles Value="$(ProjOutDir)"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
-    <Other>
-      <CustomOptions Value="-k-macos_version_min 10.9"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions>

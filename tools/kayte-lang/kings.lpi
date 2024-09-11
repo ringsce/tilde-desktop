@@ -34,7 +34,7 @@
       <Unit>
         <Filename Value="vulkan.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Vulkan"/>
+        <UnitName Value="VulkanApp"/>
       </Unit>
       <Unit>
         <Filename Value="cli.pas"/>
@@ -70,6 +70,11 @@
         <Filename Value="xmlparser.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="XMLParser"/>
+      </Unit>
+      <Unit>
+        <Filename Value="simplehttpserver.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="SimpleHTTPServer"/>
       </Unit>
     </Units>
   </ProjectOptions>

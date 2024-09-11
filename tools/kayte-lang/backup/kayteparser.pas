@@ -14,6 +14,10 @@ type
     // Base class for all nodes in the Abstract Syntax Tree (AST)
   end;
 
+  TKayteParser = class
+  public
+    function Parse(const Content: string): string;
+  end;
 
 
 
@@ -31,9 +35,7 @@ type
     FCurrentLine: Integer;
     function ParseFunction: TKayteFunctionNode;
     function ParseLine(const Line: string): TKayteASTNode;
-    public
-    function Parse(const Content: string): string;
-
+  public
     constructor Create;
     destructor Destroy; override;
     procedure LoadFromFile(const FileName: string);
