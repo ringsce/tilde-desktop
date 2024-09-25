@@ -5,8 +5,8 @@ Program kings;
 * to run on our own games, delivered by ringsce store
 *)
 uses
-  SysUtils, Classes, Zipper, fphttpclient, fpjson, jsonparser, Process, CLI,
-  Bytecode, TestBytecode, VirtualMachine, XMLParser, SimpleHTTPServer, FPMarkdownProcessor;
+  SysUtils, Classes, Zipper, fphttpclient, fpjson, jsonparser, Process,
+  CLI, Bytecode, TestBytecode, VirtualMachine, XMLParser, SimpleHTTPServer;
 
 type
   //TInstruction = (NOP, LOAD, ADD, SUB, HALT);

@@ -184,26 +184,26 @@ begin
     CreateDir(PluginDir);
 
   // Create the main plugin PHP file
-PHPFile := PluginDir + PathDelim + 'kayte-webgl-plugin.php';
-PHPContent := TStringList.Create;
-try
-  PHPContent.Add('<?php');
-  PHPContent.Add('/*');
-  PHPContent.Add(' * Plugin Name: Kayte WebGL Plugin');
-  PHPContent.Add(' * Description: Embeds Kayte WebGL content into a WordPress page.');
-  PHPContent.Add(' * Version: 1.0');
-  PHPContent.Add(' */');
-  PHPContent.Add('');
-  PHPContent.Add('function kayte_webgl_embed() {');
-  PHPContent.Add('    echo ''<div id="webgl-container"></div>'';');  // Fixed line
-  PHPContent.Add('    echo ''<script src="'' . plugin_dir_url(__FILE__) . ''kayte-webgl.js"></script>'';');
-  PHPContent.Add('}');
-  PHPContent.Add('');
-  PHPContent.Add('add_shortcode(''kayte_webgl'', ''kayte_webgl_embed'');');
-  PHPContent.SaveToFile(PHPFile);
-finally
-  PHPContent.Free;
-end;
+  PHPFile := PluginDir + PathDelim + 'kayte-webgl-plugin.php';
+  PHPContent := TStringList.Create;
+  try
+    PHPContent.Add('<?php');
+    PHPContent.Add('/*');
+    PHPContent.Add(' * Plugin Name: Kayte WebGL Plugin');
+    PHPContent.Add(' * Description: Embeds Kayte WebGL content into a WordPress page.');
+    PHPContent.Add(' * Version: 1.0');
+    PHPContent.Add(' */');
+    PHPContent.Add('');
+    PHPContent.Add('function kayte_webgl_embed() {');
+    PHPContent.Add('    echo \'<div id="webgl-container"></div>\';');
+    PHPContent.Add('    echo \'<script src="\' . plugin_dir_url(__FILE__) . \'kayte-webgl.js"></script>\';');
+    PHPContent.Add('}');
+    PHPContent.Add('');
+    PHPContent.Add('add_shortcode(\'kayte_webgl\', \'kayte_webgl_embed\');');
+    PHPContent.SaveToFile(PHPFile);
+  finally
+    PHPContent.Free;
+  end;
 
   // Create the WebGL JavaScript file
   JSFile := PluginDir + PathDelim + 'kayte-webgl.js';
