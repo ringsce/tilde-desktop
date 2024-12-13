@@ -1,1 +1,5 @@
 .DS_Store
+bin/dyld/*.o
+bin/ls/*.o
+bin/wc/*.o
+bin/editors/*.o
