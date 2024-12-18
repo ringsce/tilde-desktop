@@ -3,3 +3,4 @@ bin/dyld/*.o
 bin/ls/*.o
 bin/wc/*.o
 bin/editors/*.o
+tools/kings/package-lock.json
