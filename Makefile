@@ -8,9 +8,9 @@ FLAGS = -Mobjfpc -Sh
 BIN_DIR = bin
 SRC_DIR = src
 API_DIR = api
-
+TOOLS_DIR = tools
 # Programs
-PROGRAMS = dyld wc ls editor
+PROGRAMS = dyld wc ls editor ringsGIT
 
 # Default target: Compile all programs and API
 all: prepare $(addprefix $(BIN_DIR)/, $(PROGRAMS)) $(BIN_DIR)/api
