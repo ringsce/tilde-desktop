@@ -1,0 +1,51 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  outputDirectory: '$(Build.ArtifactStagingDirectory)'
+
+steps:
+- task: UsePythonVersion@1
+  displayName: 'Ensure Python Environment'
+  inputs:
+    versionSpec: '3.x'
+    addToPath: true
+
+- task: Bash@3
+  displayName: 'Install Free Pascal Compiler'
+  inputs:
+    targetType: 'inline'
+    script: |
+      sudo apt-get update
+      sudo apt-get install -y fpc
+      fpc -v
+
+- script: |
+    echo "Compiling Dyld Project"
+    mkdir -p build
+    fpc -O2 -Xs -o"build/Dyld" source/Dyld.pas
+  displayName: 'Build Dyld Project'
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: 'build'
+    artifact: 'Dyld'
+    publishLocation: 'pipeline'
+
+- script: |
+    echo "Packaging Release"
+    mkdir -p $(outputDirectory)
+    cp build/Dyld $(outputDirectory)
+    tar -czvf $(outputDirectory)/DyldRelease.tar.gz -C $(outputDirectory) .
+  displayName: 'Package Release'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifacts'
+  inputs:
+    PathtoPublish: '$(outputDirectory)'
+    ArtifactName: 'DyldRelease'
+    publishLocation: 'Container'

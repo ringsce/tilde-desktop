@@ -1,0 +1,58 @@
+<!-- src/components/Footer.astro -->
+---
+---
+
+<footer class="footer">
+  <nav>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/about.php">About</a></li>
+      <li><a href="/contact.php">Contact</a></li>
+    </ul>
+  </nav>
+  <div class="social-media">
+    <a href="https://mastodon.social" target="_blank" rel="noopener noreferrer">
+      <i class="fab fa-mastodon"></i>
+    </a>
+    <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer">
+      <i class="fab fa-twitter"></i>
+    </a>
+    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </div>
+  <p>© 2016 - 2024 Kreatyve Designs. All rights reserved. Powered by King</p>
+</footer>
+
+<style>
+  .footer {
+    padding: 1rem;
+    background: #333;
+    color: #fff;
+    text-align: center;
+  }
+  .footer nav ul {
+    list-style: none;
+    padding: 0;
+  }
+  .footer nav ul li {
+    display: inline;
+    margin-right: 1rem;
+  }
+  .footer nav ul li a {
+    color: #fff;
+    text-decoration: none;
+  }
+  .social-media {
+    margin: 1rem 0;
+  }
+  .social-media a {
+    margin: 0 0.5rem;
+    color: #fff;
+    text-decoration: none;
+    font-size: 24px;
+  }
+</style>
+
+<!-- Add Font Awesome -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>

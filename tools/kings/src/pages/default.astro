@@ -1,0 +1,120 @@
+---
+const sites = [
+  { name: "Site One", url: "https://example.com/site-one" },
+  { name: "Site Two", url: "https://example.com/site-two" },
+];
+
+// Function to determine which site to redirect to based on input
+function determineSite(input) {
+  // Convert input to lowercase for case-insensitivity
+  const lowerInput = input.toLowerCase();
+
+  // Example logic: Redirect based on keywords in the input
+  if (lowerInput.includes("one")) {
+    return sites[0].url;
+  } else if (lowerInput.includes("two")) {
+    return sites[1].url;
+  } else {
+    return null; // No match found
+  }
+}
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose a Site</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+        }
+        .container h1 {
+            margin-bottom: 20px;
+        }
+        .buttons, .form {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .buttons a, .form input[type="submit"] {
+            text-decoration: none;
+            background-color: #0073e6;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+        .buttons a:hover, .form input[type="submit"]:hover {
+            background-color: #005bb5;
+        }
+        .form input[type="text"] {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+    <script>
+        function handleRedirect(event) {
+            event.preventDefault();
+            const input = document.getElementById('urlInput').value;
+            const redirectUrl = determineSite(input);
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            } else {
+                alert('No matching site found. Please try again.');
+            }
+        }
+
+        // Attach the redirect handler to the form submit event
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('redirectForm').addEventListener('submit', handleRedirect);
+        });
+
+        // Add the determineSite function from Astro's frontmatter
+        function determineSite(input) {
+            const lowerInput = input.toLowerCase();
+            if (lowerInput.includes("one")) {
+                return "https://example.com/site-one";
+            } else if (lowerInput.includes("two")) {
+                return "https://example.com/site-two";
+            } else {
+                return null;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Select or Enter a URL</h1>
+
+        <!-- Button Options -->
+        <div class="buttons">
+            {sites.map(site => (
+                <a href={site.url} key={site.name}>{site.name}</a>
+            ))}
+        </div>
+
+        <!-- Form for URL input -->
+        <div class="form">
+            <form id="redirectForm">
+                <input type="text" id="urlInput" placeholder="Type your URL here..." required />
+                <input type="submit" value="Go" />
+            </form>
+        </div>
+    </div>
+</body>
+</html>

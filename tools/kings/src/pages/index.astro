@@ -1,0 +1,177 @@
+---
+import Header from '../components/header.astro';
+import Footer from '../components/footer.astro';
+import Editor from '../components/editor.astro';
+import FileList from '../components/FileList.vue';
+import Card from '../components/card.astro';
+import fs from 'fs';
+import path from 'path';
+import { marked } from 'marked'; // Markdown parser
+import Layout from '../layouts/layout.astro';
+
+
+// Example project image URL
+const projectImageUrl = '/path/to/project-image.png';
+
+// Data-fetching logic
+async function getData() {
+  const storiesFolder = path.resolve('./public/stories');
+  const covers = fs.readdirSync(storiesFolder).map(file => ({
+    name: file,
+    path: `/stories/${file}`,
+    chapters: [
+      { name: 'Chapter 1', readers: 120 },
+      { name: 'Chapter 2', readers: 95 },
+    ]
+  }));
+
+  const postsFolder = path.resolve('./src/components/posts');
+  const postFiles = fs.readdirSync(postsFolder).filter(file => file.endsWith('.md'));
+  const posts = postFiles.map(file => {
+    const filePath = path.join(postsFolder, file);
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const { title, date } = extractMetadata(fileContent);
+    const content = marked(fileContent.replace(/(^---[\s\S]*?---\s*)/, ''));
+
+    return {
+      id: file,
+      title,
+      date,
+      content,
+    };
+  });
+
+  return { covers, posts };
+}
+
+// Extract metadata from Markdown
+function extractMetadata(content) {
+  const meta = {};
+  const metaRegex = /^---\n([\s\S]*?)\n---/;
+  const match = content.match(metaRegex);
+  if (match) {
+    const metadata = match[1].split('\n').filter(line => line.trim() !== '');
+    metadata.forEach(line => {
+      const [key, value] = line.split(':').map(str => str.trim());
+      if (key && value) meta[key] = value;
+    });
+  }
+  return meta;
+}
+
+// Fetch data in setup
+const { covers, posts } = await getData();
+
+// Example card data
+const cards = [
+  {
+    title: 'Project 1',
+    body: 'Description of project 1.',
+    href: '/project1'
+  },
+  {
+    title: 'Project 2',
+    body: 'Description of project 2.',
+    href: '/project2'
+  },
+  {
+    title: 'Project 3',
+    body: 'Description of project 3.',
+    href: '/project3'
+  }
+];
+
+
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A site built with Astro and Vue.js, powered by Node.js">
+  <meta name="generator" content="Astro">
+  <title>Astro + Markdown Posts</title>
+
+  <!-- Include Vue.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+
+  <!-- Include Font Awesome for RSS Icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <style>
+    /* Include your styles here */
+    .rss-icon {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 2rem;
+      color: orange;
+    }
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 20px;
+    }
+    .card-container li {
+      flex: 1 1 calc(33.333% - 16px); /* 3 cards per row with space between */
+      max-width: calc(33.333% - 16px);
+    }
+  </style>
+  <script>
+    // Function to refresh the page every 5 minutes
+    function refreshPage() {
+      setTimeout(() => {
+        window.location.reload();
+      }, 5 * 60 * 1000); // 5 minutes
+    }
+    window.addEventListener('load', refreshPage);
+  </script>
+</head>
+<body>
+  <Header />
+
+  <main>
+    
+ <h1>Welcome to the Index Page</h1>
+  <!-- Main page content -->
+  <Editor projectImageUrl={projectImageUrl}>
+      <h1>Welcome to the Editor</h1>
+      <p>This is where you can write and edit your content.</p>
+    </Editor>
+
+        <h1>Astro + Markdown 🚀</h1>
+    {posts.map(post => (
+      <article key={post.id}>
+        <h2>{post.title}</h2>
+        <time>{post.date}</time>
+        <div innerHTML={post.content}></div>
+      </article>
+    ))}
+
+    <FileList covers={covers} />
+
+    <!-- Cards Section -->
+    <div class="card-container">
+      {cards.map(card => (
+        <Card title={card.title} body={card.body} href={card.href} />
+      ))}
+    </div>
+
+    <!-- Add a link to the chat page -->
+    <div class="chat-link">
+      <a href="/chat">Join our IRC Chat</a>
+    </div>
+
+    <!-- RSS Icon -->
+    <a href="/rss.xml" class="rss-icon" title="RSS Feed">
+      <i class="fas fa-rss"></i>
+    </a>
+
+
+
+  </main>
+  <Footer />
+</body>
+</html>

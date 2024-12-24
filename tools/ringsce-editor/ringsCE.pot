@@ -1,0 +1,81 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: tform1.caption
+msgid "Form1"
+msgstr ""
+
+#: tform1.edit.caption
+msgid "Edit"
+msgstr ""
+
+#: tform1.f.caption
+msgid "File"
+msgstr ""
+
+#: tform1.menuitem1.caption
+msgid "Cut"
+msgstr ""
+
+#: tform1.menuitem11.caption
+msgid "V"
+msgstr ""
+
+#: tform1.menuitem12.caption
+msgid "New Project"
+msgstr ""
+
+#: tform1.menuitem13.caption
+msgid "MenuItem13"
+msgstr ""
+
+#: tform1.menuitem14.caption
+msgid "Save Project"
+msgstr ""
+
+#: tform1.menuitem15.caption
+msgid "Settings"
+msgstr ""
+
+#: tform1.menuitem2.caption
+msgid "Paste"
+msgstr ""
+
+#: tform1.menuitem3.caption
+msgid "About"
+msgstr ""
+
+#: tform1.menuitem4.caption
+msgid "MenuItem4"
+msgstr ""
+
+#: tform1.menuitem8.caption
+msgctxt "tform1.menuitem8.caption"
+msgid "Tools"
+msgstr ""
+
+#: tform1.menuitem9.caption
+msgid "Load Project"
+msgstr ""
+
+#: tform1.project.caption
+msgid "Project"
+msgstr ""
+
+#: tform1.toolbar1.caption
+msgid "ToolBar1"
+msgstr ""
+
+#: tform1.tools.caption
+msgctxt "tform1.tools.caption"
+msgid "Tools"
+msgstr ""
+
+#: tform1.view.caption
+msgid "View"
+msgstr ""
+
+#: tform6.caption
+msgid "Form6"
+msgstr ""
+

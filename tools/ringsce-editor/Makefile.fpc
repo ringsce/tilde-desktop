@@ -1,0 +1,26 @@
+#
+#   Makefile.fpc for Free Pascal Source Tree
+#
+
+[package]
+name=fpc
+version=3.3.1
+
+[target]
+#dirs=compiler rtl utils packages installer
+
+[require]
+nortl=y
+
+[install]
+fpcpackage=y
+
+[default]
+fpcdir=.
+rule=help
+
+[prerules]
+REQUIREDVERSION=3.2.2
+REQUIREDVERSION2=3.2.0
+
+
