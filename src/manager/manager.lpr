@@ -1,4 +1,4 @@
-program manager;
+program MainManager;
 
 {$mode objfpc}{$H+}
 
@@ -10,8 +10,7 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, manager
-  { you can add units after this };
+  Forms, manager, FileManager, DirectoryTree, FileList;
 
 {$R *.res}
 

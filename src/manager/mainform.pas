@@ -1,4 +1,4 @@
-unit manager;
+unit MainForm;
 
 {$mode objfpc}{$H+}
 
@@ -13,7 +13,7 @@ type
     MainMenu: TMainMenu;
     FileMenu: TMenuItem;
     ExitMenuItem: TMenuItem;
-    Splitter: TSplitter; // Declares the splitter as a form field
+    Splitter: TSplitter;
     procedure ExitMenuItemClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
@@ -21,6 +21,9 @@ type
     FFileList: TFileList;
   public
   end;
+
+var
+  MainForm: TMainForm;
 
 implementation
 
@@ -34,10 +37,6 @@ begin
   FDirectoryTree.Align := alLeft;
   FDirectoryTree.Width := 200;
 
-  Splitter := TSplitter.Create(Self); // Create the splitter
-  Splitter.Parent := Self;
-  Splitter.Align := alLeft;
-
   FFileList := TFileList.Create(Self);
   FFileList.Parent := Self;
   FFileList.Align := alClient;
@@ -50,4 +49,6 @@ procedure TMainForm.ExitMenuItemClick(Sender: TObject);
 begin
   Close;
 end;
+
+end.
 

@@ -32,12 +32,34 @@
       <Unit>
         <Filename Value="manager.lpr"/>
         <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="manager.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit>
+      <Unit>
+        <Filename Value="mainform.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MainForm"/>
+      </Unit>
+      <Unit>
+        <Filename Value="filemanager.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="FileManager"/>
+      </Unit>
+      <Unit>
+        <Filename Value="directorytree.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="DirectoryTree"/>
+      </Unit>
+      <Unit>
+        <Filename Value="filelist.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="FileList"/>
       </Unit>
     </Units>
   </ProjectOptions>

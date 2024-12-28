@@ -1,0 +1,17 @@
+object MainForm: TMainForm
+  Left = 200
+  Height = 600
+  Top = 100
+  Width = 800
+  Caption = 'File Manager'
+  OnCreate = FormCreate
+  object MainMenu: TMainMenu
+    object FileMenu: TMenuItem
+      Caption = 'File'
+      object ExitMenuItem: TMenuItem
+        Caption = 'Exit'
+        OnClick = ExitMenuItemClick
+      end
+    end
+  end
+end
