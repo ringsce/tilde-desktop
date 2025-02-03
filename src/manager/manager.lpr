@@ -10,7 +10,7 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, manager, FileManager, DirectoryTree, FileList;
+  Forms, Manager, FileManager, DirectoryTree, FileList;
 
 {$R *.res}
 

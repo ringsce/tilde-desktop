@@ -49,6 +49,10 @@ msgstr ""
 msgid "MenuItem4"
 msgstr ""
 
+#: tform1.menuitem5.caption
+msgid "MenuItem5"
+msgstr ""
+
 #: tform1.menuitem8.caption
 msgctxt "tform1.menuitem8.caption"
 msgid "Tools"

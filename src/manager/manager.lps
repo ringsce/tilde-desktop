@@ -10,7 +10,7 @@
         <HasResources Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="21"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="109"/>
       </Unit>
       <Unit>
         <Filename Value="manager.pas"/>
@@ -18,10 +18,11 @@
         <ComponentName Value="Form1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
+        <UnitName Value="Manager"/>
         <EditorIndex Value="1"/>
-        <CursorPos Y="24"/>
-        <UsageCount Value="21"/>
+        <TopLine Value="29"/>
+        <CursorPos X="53" Y="60"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
@@ -29,9 +30,10 @@
         <Filename Value="mainform.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="MainForm"/>
+        <IsVisibleTab Value="True"/>
         <TopLine Value="21"/>
-        <CursorPos Y="54"/>
-        <UsageCount Value="21"/>
+        <CursorPos X="22" Y="40"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -39,9 +41,7 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="FileManager"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="2"/>
-        <CursorPos Y="35"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -49,9 +49,9 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="DirectoryTree"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="28"/>
-        <CursorPos Y="61"/>
-        <UsageCount Value="21"/>
+        <TopLine Value="36"/>
+        <CursorPos Y="69"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -61,11 +61,11 @@
         <EditorIndex Value="3"/>
         <TopLine Value="31"/>
         <CursorPos Y="64"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="11">
+    <JumpHistory HistoryIndex="9">
       <Position>
         <Filename Value="mainform.pas"/>
         <Caret Line="54" TopLine="21"/>
@@ -99,20 +99,11 @@
         <Caret Line="64" TopLine="31"/>
       </Position>
       <Position>
-        <Filename Value="manager.pas"/>
-        <Caret Line="26" Column="24"/>
+        <Filename Value="mainform.pas"/>
       </Position>
       <Position>
         <Filename Value="manager.pas"/>
-        <Caret Line="16" Column="29"/>
-      </Position>
-      <Position>
-        <Filename Value="manager.pas"/>
-        <Caret Line="43" TopLine="12"/>
-      </Position>
-      <Position>
-        <Filename Value="manager.pas"/>
-        <Caret Line="53" TopLine="22"/>
+        <Caret Line="27" Column="49"/>
       </Position>
     </JumpHistory>
     <RunParams>

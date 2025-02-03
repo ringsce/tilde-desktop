@@ -12,9 +12,10 @@
 {"hash":380871,"name":"tform1.view.caption","sourcebytes":[86,105,101,119],"value":"View"},
 {"hash":86,"name":"tform1.menuitem11.caption","sourcebytes":[86],"value":"V"},
 {"hash":5989939,"name":"tform1.tools.caption","sourcebytes":[84,111,111,108,115],"value":"Tools"},
+{"hash":94435780,"name":"tform1.menuitem4.caption","sourcebytes":[77,101,110,117,73,116,101,109,52],"value":"MenuItem4"},
+{"hash":94435781,"name":"tform1.menuitem5.caption","sourcebytes":[77,101,110,117,73,116,101,109,53],"value":"MenuItem5"},
 {"hash":127273972,"name":"tform1.project.caption","sourcebytes":[80,114,111,106,101,99,116],"value":"Project"},
 {"hash":132301556,"name":"tform1.menuitem12.caption","sourcebytes":[78,101,119,32,80,114,111,106,101,99,116],"value":"New Project"},
 {"hash":46235124,"name":"tform1.menuitem9.caption","sourcebytes":[76,111,97,100,32,80,114,111,106,101,99,116],"value":"Load Project"},
-{"hash":36621556,"name":"tform1.menuitem14.caption","sourcebytes":[83,97,118,101,32,80,114,111,106,101,99,116],"value":"Save Project"},
-{"hash":94435780,"name":"tform1.menuitem4.caption","sourcebytes":[77,101,110,117,73,116,101,109,52],"value":"MenuItem4"}
+{"hash":36621556,"name":"tform1.menuitem14.caption","sourcebytes":[83,97,118,101,32,80,114,111,106,101,99,116],"value":"Save Project"}
 ]}

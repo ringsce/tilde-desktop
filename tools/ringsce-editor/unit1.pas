@@ -6,10 +6,11 @@ interface
 
 uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
-  fphttpapp, httpdefs, httproute, fpjson, jsonparser,
+  fphttpapp, httpdefs, httproute, fpjson, jsonparser, process,
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Menus, ComCtrls,
   SynEdit, SynEditHighlighter, LCLType, Lazlogger,SynCompletion, SynHighlighterCpp, SynHighlighterPas,
   SynHighlighterVB, SynHighlighterPHP, SynHighlighterCss, setup1, Unit3;
+
 
 type
 
@@ -18,6 +19,9 @@ type
   TForm1 = class(TForm)
     MainMenu1: TMainMenu;
     ed1: TSynEdit;
+    MenuItem11: TMenuItem;
+    MenuItem4: TMenuItem;
+    MenuItem5: TMenuItem;
     mnSyntax: TMenuItem;
     OpenDialog1: TOpenDialog;
     F: TMenuItem;
@@ -31,6 +35,7 @@ type
     MenuItem3: TMenuItem;
     MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
+    Process1: TProcess;
     Project: TMenuItem;
     SynCssSyn1: TSynCssSyn;
     SynPHPSyn1: TSynPHPSyn;
@@ -52,6 +57,8 @@ type
     procedure MenuItem13Click(Sender: TObject);
     procedure MenuItem15Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
+    procedure MenuItem4Click(Sender: TObject);
+    procedure MenuItem5Click(Sender: TObject);
     procedure MenuItem9Click(Sender: TObject);
     procedure ProjectClick(Sender: TObject);
     procedure SynEdit1Change(Sender: TObject);
@@ -143,6 +150,16 @@ begin
 end;
 
 procedure TForm1.MenuItem1Click(Sender: TObject);
+begin
+
+end;
+
+procedure TForm1.MenuItem4Click(Sender: TObject);
+begin
+
+end;
+
+procedure TForm1.MenuItem5Click(Sender: TObject);
 begin
 
 end;
