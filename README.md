@@ -314,5 +314,5 @@ This setup provides a foundation to port Tilde Desktop to AROS and test it incre
 
 
 **Kreatyve Designs**  
-&copy; 2016 - 2024 Kreatyve Designs. All Rights Reserved.
+&copy; 2016 - 2025 Kreatyve Designs. All Rights Reserved.
 
