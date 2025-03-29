@@ -18,13 +18,12 @@
         <UnitName Value="CLI"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="16"/>
-        <CursorPos Y="37"/>
+        <CursorPos X="75"/>
         <UsageCount Value="59"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="3">
+    <JumpHistory HistoryIndex="2">
       <Position>
         <Filename Value="ctminterpreter.lpr"/>
         <Caret Line="166" Column="30" TopLine="149"/>
@@ -36,10 +35,6 @@
       <Position>
         <Filename Value="ctminterpreter.lpr"/>
         <Caret Line="50" TopLine="35"/>
-      </Position>
-      <Position>
-        <Filename Value="cli.pas"/>
-        <Caret Column="75"/>
       </Position>
     </JumpHistory>
     <RunParams>

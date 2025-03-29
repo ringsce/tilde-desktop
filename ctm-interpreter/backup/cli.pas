@@ -19,14 +19,13 @@ begin
   Output := TStringList.Create;
   Process := TProcess.Create(nil);
   try
-    Process.Executable := '/bin/sh';  // Use shell interpreter
+    Process.Executable := '/bin/sh';  // Shell interpreter
     Process.Parameters.Add('-c');     // Run as command
     Process.Parameters.Add(ACommand); // The actual command
     Process.Options := [poWaitOnExit, poUsePipes];
-
     Process.Execute;
 
-    // Read output from the process
+    // Read output
     Output.LoadFromStream(Process.Output);
     Writeln(Output.Text);
   finally
