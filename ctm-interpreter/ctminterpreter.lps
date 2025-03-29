@@ -8,19 +8,19 @@
         <Filename Value="ctminterpreter.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="CTMInterpreter"/>
-        <CursorPos X="39" Y="4"/>
-        <UsageCount Value="68"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos X="56" Y="4"/>
+        <UsageCount Value="69"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="cli.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="CLI"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="16"/>
-        <CursorPos Y="37"/>
-        <UsageCount Value="59"/>
+        <TopLine Value="43"/>
+        <CursorPos Y="93"/>
+        <UsageCount Value="60"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>

@@ -35,6 +35,40 @@ begin
   end;
 end;
 
+procedure ShowHelp;
+begin
+  Writeln('Usage: git <repo_url> [destination]');
+  Writeln('Example: git https://github.com/ringsce/tilde-desktop.git');
+  Writeln('         git https://github.com/ringsce/tilde-desktop.git my-folder');
+  Writeln;
+  Writeln('Options:');
+  Writeln('  --help      Show this help message and exit');
+  Halt(0);
+end;
+
+procedure CloneGitRepo(const RepoURL, Destination: string);
+var
+  GitProcess: TProcess;
+begin
+  GitProcess := TProcess.Create(nil);
+  try
+    GitProcess.Executable := 'git';
+    GitProcess.Parameters.Add('clone');
+    GitProcess.Parameters.Add(RepoURL);
+    GitProcess.Parameters.Add(Destination);
+    GitProcess.Options := [poWaitOnExit, poUsePipes];
+
+    Writeln('Cloning repository: ', RepoURL);
+    GitProcess.Execute;
+
+    Writeln('Clone completed: ', Destination);
+  except
+    on E: Exception do
+      Writeln('Error cloning repository: ', E.Message);
+  end;
+  GitProcess.Free;
+end;
+
 procedure RunCLI;
 var
   RepoPath: string;
@@ -53,9 +87,11 @@ begin
   end
   else
   begin
-    Writeln('Usage: cli_sync --sync');
+    Writeln('Usage: cli --sync');
   end;
 end;
 
+begin
+  CloneGitRepo('https://github.com/ringsce/tilde-desktop.git', 'tilde-desktop');
 end.
 
