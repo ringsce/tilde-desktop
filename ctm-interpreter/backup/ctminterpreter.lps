@@ -10,7 +10,7 @@
         <UnitName Value="CTMInterpreter"/>
         <TopLine Value="236"/>
         <CursorPos X="67" Y="253"/>
-        <UsageCount Value="122"/>
+        <UsageCount Value="118"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -19,8 +19,9 @@
         <UnitName Value="CLI"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <CursorPos X="26"/>
-        <UsageCount Value="113"/>
+        <TopLine Value="35"/>
+        <CursorPos Y="52"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
