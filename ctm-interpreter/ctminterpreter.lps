@@ -8,23 +8,24 @@
         <Filename Value="ctminterpreter.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="CTMInterpreter"/>
-        <IsVisibleTab Value="True"/>
-        <CursorPos X="56" Y="4"/>
-        <UsageCount Value="69"/>
+        <TopLine Value="236"/>
+        <CursorPos X="67" Y="253"/>
+        <UsageCount Value="118"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="cli.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="CLI"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="43"/>
-        <CursorPos Y="93"/>
-        <UsageCount Value="60"/>
+        <TopLine Value="35"/>
+        <CursorPos Y="52"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="3">
+    <JumpHistory HistoryIndex="6">
       <Position>
         <Filename Value="ctminterpreter.lpr"/>
         <Caret Line="166" Column="30" TopLine="149"/>
@@ -40,6 +41,18 @@
       <Position>
         <Filename Value="cli.pas"/>
         <Caret Column="75"/>
+      </Position>
+      <Position>
+        <Filename Value="cli.pas"/>
+        <Caret Line="89" Column="5" TopLine="45"/>
+      </Position>
+      <Position>
+        <Filename Value="cli.pas"/>
+        <Caret Line="153" TopLine="132"/>
+      </Position>
+      <Position>
+        <Filename Value="cli.pas"/>
+        <Caret Line="88" Column="5" TopLine="77"/>
       </Position>
     </JumpHistory>
     <RunParams>
