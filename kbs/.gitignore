@@ -1,0 +1,30 @@
+# macOS specific
+.DS_Store
+
+# Specific design file
+SPA.bdesign
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables (NEVER commit these)
+.env
+.env.local
+.env.*.local
+
+# Dependency directories
+node_modules/
+bower_components/
+
+# Build artifacts and distribution folders
+dist/
+build/
+.next/
+.out/
+
+# IDE settings
+.vscode/
+.idea/

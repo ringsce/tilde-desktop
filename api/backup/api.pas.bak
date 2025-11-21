@@ -5,7 +5,7 @@ unit api;
 interface
 
 uses
-  Classes, SysUtils, fphttpclient, fpjson, jsonparser;
+  Classes, SysUtils, fphttpclient, fpjson, jsonparser, Process;
 
 type
   TAPIClient = class
@@ -17,7 +17,12 @@ type
     function Post(const AEndpoint: string; const AData: TJSONStringType): string;
   end;
 
+procedure InitProject;
+procedure SyncRepository;
+procedure BuildFromSource;
+procedure ResetProject;
 function ExecuteShellCommand(const ACommand: string): string;
+procedure CloneSource;
 
 implementation
 
@@ -68,6 +73,51 @@ begin
     AProcess.Free;
     Output.Free;
   end;
+end;
+
+procedure InitProject;
+begin
+  Writeln('Initializing project...');
+  ExecuteShellCommand('make init');
+  Writeln('Project initialization completed.');
+end;
+
+(* procedure CloneSource *)
+procedure CloneSource;
+begin
+ Writeln(' Cloning System');
+ ExecuteShellCommand('git clone https://www.github.com/ekron-realms.git');
+ ExecuteShellCommand('git clone https://www.github.com/kayte-lang.git');
+ ExecuteShellCommand('git clone https://www.github.com/kayteide.git');
+ ExecuteShellCommand('git clone https://www.github.com/sb_rpg.git');
+ ExecuteShellCommand('git clone https://www.github.com/kcc.git');
+
+
+
+
+end;
+
+procedure SyncRepository;
+begin
+  Writeln('Syncing repository...');
+  ExecuteShellCommand('cd tilde-desktop && git pull origin main');
+  Writeln('Repository sync completed.');
+end;
+
+procedure BuildFromSource;
+begin
+  Writeln('Building SDK from source...');
+  ExecuteShellCommand('cd tilde-desktop && make');
+  Writeln('Build completed.');
+  SyncRepository;
+end;
+
+procedure ResetProject;
+begin
+  Writeln('Resetting project...');
+  ExecuteShellCommand('cd tilde-desktop && git reset --hard && git clean -fd');
+  Writeln('Project reset completed.');
+  SyncRepository;
 end;
 
 end.

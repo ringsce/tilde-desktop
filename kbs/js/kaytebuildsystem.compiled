@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Compiler Value="/Users/pedro/fpcupdeluxe/fpc/bin/aarch64-darwin/pas2js" Date="1755271851"/>
+  <Params Value="-Tbrowser -Pecmascript5 -MObjFPC -Sc -O1 -l -vewnhibq -Fu/Users/pedro/Projects/tilde-desktop/kbs/ -FU/Users/pedro/Projects/tilde-desktop/kbs/js/ -FE/Users/pedro/Projects/tilde-desktop/kbs/ -o/Users/pedro/Projects/tilde-desktop/kbs/kaytebuildsystem.js -Jeutf-8 -Jirtl.js -Jc -Jminclude kaytebuildsystem.lpr"/>
+  <Complete Value="False"/>
+</CONFIG>

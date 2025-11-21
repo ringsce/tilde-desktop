@@ -34,6 +34,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="CLI"/>
       </Unit>
+      <Unit>
+        <Filename Value="githubreader.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GithubReader"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

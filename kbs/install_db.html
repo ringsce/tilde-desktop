@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayte Build System - Database Configuration</title>
+
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.3.2/mdb.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/Lato.css">
+    <link rel="stylesheet" href="assets/css/bss-overrides.css">
+    <link rel="stylesheet" href="assets/css/animate.min.css">
+
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      main {
+        flex: 1 0 auto;
+        padding-top: 2rem; 
+        padding-bottom: 2rem;
+      }
+      /* Footer and link styles are copied from login.html for consistency */
+      .footer {
+        flex-shrink: 0;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+      .footer-left > * {
+        margin-right: 1rem;
+      }
+      .footer-right > * {
+        margin-left: 1rem;
+      }
+      /* Custom styles for the DB cards */
+      .db-card {
+        border-left: 5px solid;
+        border-radius: 5px;
+        transition: box-shadow 0.3s;
+      }
+      .db-card:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      }
+      .sqlite-border { border-left-color: #007bff !important; }
+      .mysql-border { border-left-color: #00bcd4 !important; }
+    </style>
+</head>
+<body>
+
+<header>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">
+        <i class="fas fa-tools me-2"></i> <strong>Kayte Build System</strong>
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-mdb-toggle="collapse"
+        data-mdb-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+                <a class="nav-link active" href="install_db.html">Database Install</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-primary btn-sm ms-3" href="login.html" role="button">Login</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="container">
+    <h2 class="mb-4">Database Register Installation</h2>
+    <p class="text-muted">Configure and install necessary database registers for SQLite and MySQL to enable persistence and project settings storage.</p>
+
+    <div class="card mb-4 db-card sqlite-border">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-database me-2"></i> SQLite3 Registers</h5>
+        <p class="card-text">Install or verify the required structure and default records for **SQLite3**. This is typically used for local, file-based project settings.</p>
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div data-mdb-input-init class="form-outline">
+              <input type="text" id="sqlitePath" class="form-control" value="./kayte.db"/>
+              <label class="form-label" for="sqlitePath">Database Path</label>
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <select data-mdb-select-init class="form-control">
+              <option value="1">Latest (v3)</option>
+              <option value="2">Legacy</option>
+            </select>
+            <label class="form-label select-label">Version</label>
+          </div>
+        </div>
+        
+        <button type="button" class="btn btn-primary" onclick="installSqlite()">Install SQLite Registers</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="verifySqlite()">Verify Connection</button>
+      </div>
+    </div>
+
+    <div class="card db-card mysql-border">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-server me-2"></i> MySQL 8 / 9 Registers</h5>
+        <p class="card-text">Configure and install the necessary database schema and registers for **MySQL**. This is used for centralized, multi-user project and build management.</p>
+        
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <div data-mdb-input-init class="form-outline">
+              <input type="text" id="mysqlHost" class="form-control" value="localhost"/>
+              <label class="form-label" for="mysqlHost">Host</label>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div data-mdb-input-init class="form-outline">
+              <input type="text" id="mysqlUser" class="form-control" value="kayte_user"/>
+              <label class="form-label" for="mysqlUser">Username</label>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div data-mdb-input-init class="form-outline">
+              <input type="password" id="mysqlPass" class="form-control"/>
+              <label class="form-label" for="mysqlPass">Password</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <select data-mdb-select-init class="form-control">
+                    <option value="8">MySQL 8</option>
+                    <option value="9">MySQL 9</option>
+                </select>
+                <label class="form-label select-label">MySQL Version</label>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div data-mdb-input-init class="form-outline">
+                    <input type="text" id="mysqlDB" class="form-control" value="kayte_db"/>
+                    <label class="form-label" for="mysqlDB">Database Name</label>
+                </div>
+            </div>
+        </div>
+        
+        <button type="button" class="btn btn-info text-white" onclick="installMysql()">Install MySQL Registers</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="verifyMysql()">Verify Connection</button>
+      </div>
+    </div>
+  </div>
+</main>
+ 
+<footer class="footer">
+    <div class="footer-left">
+        <span>© 2025 Kayte Build System</span>
+        <a class="footer-link" href="#" onclick="showAbout(); return false;">About</a>
+        <a class="footer-link" href="#" onclick="showDocs(); return false;">Documentation</a>
+        <a class="footer-link" href="#" onclick="showSupport(); return false;">Support</a>
+    </div>
+    <div class="footer-right">
+        <span>v1.0.0</span>
+        <span class="footer-icon" title="GitHub">⭐</span>
+        <span class="footer-icon" title="Discord">💬</span>
+    </div>
+</footer>
+
+
+<script
+  type="text/javascript"
+  src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.3.2/mdb.umd.min.js"
+></script>
+<script>
+    // Placeholder functions for demonstration
+    function installSqlite() { alert("Simulating SQLite register installation..."); }
+    function verifySqlite() { alert("Verifying SQLite connection..."); }
+    function installMysql() { alert("Simulating MySQL register installation..."); }
+    function verifyMysql() { alert("Verifying MySQL connection..."); }
+    function showAbout() { alert('Kayte Build System v1.0.0\n© 2025'); }
+    function showDocs() { alert('Documentation is not yet available.'); }
+    function showSupport() { alert('Please visit our GitHub page for support.'); }
+</script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/bs-init.js"></script>
+
+</body>
+</html>

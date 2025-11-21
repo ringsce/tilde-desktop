@@ -17,10 +17,12 @@ type
     function Post(const AEndpoint: string; const AData: TJSONStringType): string;
   end;
 
+procedure InitProject;
 procedure SyncRepository;
 procedure BuildFromSource;
 procedure ResetProject;
 function ExecuteShellCommand(const ACommand: string): string;
+procedure CloneSource;
 
 implementation
 
@@ -73,6 +75,24 @@ begin
   end;
 end;
 
+procedure InitProject;
+begin
+  Writeln('Initializing project...');
+  ExecuteShellCommand('make init');
+  Writeln('Project initialization completed.');
+end;
+
+(* procedure CloneSource *)
+procedure CloneSource;
+begin
+ Writeln(' Cloning System');
+ ExecuteShellCommand('git clone https://www.github.com/ekron-realms.git');
+ ExecuteShellCommand('git clone https://www.github.com/kayte-lang.git');
+ ExecuteShellCommand('git clone https://www.github.com/kayteide.git');
+ ExecuteShellCommand('git clone https://www.github.com/sb_rpg.git');
+ ExecuteShellCommand('git clone https://www.github.com/kcc.git');
+end;
+
 procedure SyncRepository;
 begin
   Writeln('Syncing repository...');
@@ -97,4 +117,3 @@ begin
 end;
 
 end.
-
