@@ -32,12 +32,15 @@
       <Unit>
         <Filename Value="cli.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="CLI"/>
       </Unit>
       <Unit>
         <Filename Value="githubreader.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GithubReader"/>
+      </Unit>
+      <Unit>
+        <Filename Value="pascalscript.pas"/>
+        <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
   </ProjectOptions>

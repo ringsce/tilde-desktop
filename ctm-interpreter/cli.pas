@@ -99,10 +99,12 @@ end;
 function TRingsceRepoReader.ParseJSONArray(const JSONStr: string): TJSONArray;
 var
   Parser: TJSONParser;
+  JSONData: TJSONData;
 begin
-  Parser := TJSONParser.Create(JSONStr);
+  Parser := TJSONParser.Create(JSONStr, []);
   try
-    Result := Parser.Parse as TJSONArray;
+    JSONData := Parser.Parse;
+    Result := JSONData as TJSONArray;
   finally
     Parser.Free;
   end;
@@ -111,10 +113,12 @@ end;
 function TRingsceRepoReader.ParseJSONObject(const JSONStr: string): TJSONObject;
 var
   Parser: TJSONParser;
+  JSONData: TJSONData;
 begin
-  Parser := TJSONParser.Create(JSONStr);
+  Parser := TJSONParser.Create(JSONStr, []);
   try
-    Result := Parser.Parse as TJSONObject;
+    JSONData := Parser.Parse;
+    Result := JSONData as TJSONObject;
   finally
     Parser.Free;
   end;
@@ -419,10 +423,12 @@ end;
 function TClaudeAIIntegration.ParseJSONObject(const JSONStr: string): TJSONObject;
 var
   Parser: TJSONParser;
+  JSONData: TJSONData;
 begin
-  Parser := TJSONParser.Create(JSONStr);
+  Parser := TJSONParser.Create(JSONStr, []);
   try
-    Result := Parser.Parse as TJSONObject;
+    JSONData := Parser.Parse;
+    Result := JSONData as TJSONObject;
   finally
     Parser.Free;
   end;
@@ -435,6 +441,8 @@ var
   MessagesArray, ContentArray: TJSONArray;
   MessageObj: TJSONObject;
   InputStream: TStringStream;
+  ContentData: TJSONData;
+  TextObj: TJSONObject;
 begin
   Result := '';
 
@@ -464,10 +472,15 @@ begin
 
       ResponseObj := ParseJSONObject(ResponseStr);
       try
-        ContentArray := ResponseObj.GetPath('content') as TJSONArray;
-        if Assigned(ContentArray) and (ContentArray.Count > 0) then
+        ContentData := ResponseObj.FindPath('content');
+        if Assigned(ContentData) and (ContentData is TJSONArray) then
         begin
-          Result := (ContentArray.Objects[0] as TJSONObject).Get('text', '');
+          ContentArray := TJSONArray(ContentData);
+          if ContentArray.Count > 0 then
+          begin
+            TextObj := TJSONObject(ContentArray.Items[0]);
+            Result := TextObj.Get('text', '');
+          end;
         end;
       finally
         ResponseObj.Free;
