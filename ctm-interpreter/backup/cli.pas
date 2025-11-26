@@ -6,7 +6,7 @@ unit cli;
 interface
 
 uses
-  SysUtils, Classes, fphttpclient, opensslsockets, fpjson, jsonparser, base64, Process;
+  SysUtils, Classes, fphttpclient, opensslsockets, fpjson, jsonparser, base64, Process, openai;
 
 type
   TGitHubFile = record

@@ -1,7 +1,7 @@
 program CTMInterpreter;
 
 uses
-  SysUtils, Classes, fphttpclient, opensslsockets, cli, pascalscript, openai;
+  SysUtils, Classes, fphttpclient, opensslsockets, cli, pascalscript;
 
 type
   TTokenKind = (tkIdentifier, tkNumber, tkOperator, tkKeyword, tkEOF);
