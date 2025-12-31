@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="monitor.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="367"/>
+        <CursorPos X="5" Y="400"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="3">
+      <Position>
+        <Filename Value="monitor.lpr"/>
+        <Caret Line="396" Column="5" TopLine="363"/>
+      </Position>
+      <Position>
+        <Filename Value="monitor.lpr"/>
+        <Caret Line="386" TopLine="360"/>
+      </Position>
+      <Position>
+        <Filename Value="monitor.lpr"/>
+        <Caret Line="387" Column="11" TopLine="360"/>
+      </Position>
+      <Position>
+        <Filename Value="monitor.lpr"/>
+        <Caret Line="389" Column="41" TopLine="360"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>

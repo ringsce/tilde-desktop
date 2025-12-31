@@ -8,7 +8,7 @@
         <Filename Value="ctminterpreter.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="CTMInterpreter"/>
-        <TopLine Value="251"/>
+        <IsVisibleTab Value="True"/>
         <CursorPos X="5" Y="283"/>
         <UsageCount Value="212"/>
         <Loaded Value="True"/>
@@ -17,7 +17,8 @@
         <Filename Value="cli.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="3"/>
-        <CursorPos X="87" Y="9"/>
+        <TopLine Value="525"/>
+        <CursorPos X="78"/>
         <UsageCount Value="203"/>
         <Loaded Value="True"/>
       </Unit>
@@ -26,7 +27,7 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="GithubReader"/>
         <EditorIndex Value="6"/>
-        <TopLine Value="405"/>
+        <TopLine Value="345"/>
         <CursorPos X="33" Y="370"/>
         <UsageCount Value="258"/>
         <Loaded Value="True"/>
@@ -37,7 +38,7 @@
         <EditorIndex Value="2"/>
         <TopLine Value="55"/>
         <CursorPos X="5" Y="88"/>
-        <UsageCount Value="115"/>
+        <UsageCount Value="309"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -45,7 +46,7 @@
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="1"/>
         <CursorPos X="20" Y="221"/>
-        <UsageCount Value="107"/>
+        <UsageCount Value="301"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -57,18 +58,10 @@
         <Loaded Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="/Applications/lazarus/fpc/3.2.2/sources/packages/fcl-web/src/base/fphttpclient.pp"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="1566"/>
-        <CursorPos X="30" Y="1583"/>
-        <UsageCount Value="2"/>
-      </Unit>
-      <Unit>
         <Filename Value="ringsce.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="4"/>
         <CursorPos X="23" Y="22"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="107"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
