@@ -253,7 +253,7 @@ Created as a cross-platform system monitoring tool demonstrating:
 
 ## Version History
 
-- **v1.0.0** (2024-12-31)
+- **v1.0.0** (2025-12-31)
   - Initial release
   - Terminal UI (Pascal/Free Pascal)
   - Qt6 GUI (C++)
