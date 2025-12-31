@@ -260,7 +260,6 @@ var
   OutputLines: TStringList;
   i, Count: Integer;
   Line: String;
-  ShouldShow: Boolean;
 begin
   WriteLn('╔════════════════════════════════════════════════════════════════════════════════╗');
   WriteLn('║                            RUNNING PROCESSES                                   ║');
@@ -288,28 +287,21 @@ begin
       Count := 0;
       for i := 0 to OutputLines.Count - 1 do
       begin
-        Line := OutputLines[i];
-        if Trim(Line) <> '' then
+        Line := Trim(OutputLines[i]);
+        if (Line <> '') and (Count < 50) then
         begin
-          ShouldShow := True;
-
-          // Only filter out obvious kernel threads on Unix
+          // Filter out sleep/idle processes on Unix
           {$IFDEF UNIX}
-          if (Pos('[kworker', Line) > 0) or
-             (Pos('[migration', Line) > 0) or
-             (Pos('[ksoftirqd', Line) > 0) or
-             (Pos('[rcu_', Line) > 0) or
-             (Pos('[watchdog', Line) > 0) or
-             (Pos('[cpuhp', Line) > 0) or
-             (Pos('[kthreadd', Line) > 0) or
-             (Pos('[mm_percpu', Line) > 0) then
-            ShouldShow := False;
+          if (Pos('sleep', LowerCase(Line)) = 0) and
+             (Pos('[kworker', Line) = 0) and
+             (Pos('[migration', Line) = 0) and
+             (Pos('[ksoftirqd', Line) = 0) and
+             (Pos('[watchdog', Line) = 0) and
+             (Pos('[rcu_', Line) = 0) then
           {$ENDIF}
-
-          if ShouldShow and (Count < 100) then
           begin
-            if Length(Line) > 130 then
-              WriteLn(Copy(Line, 1, 130) + '...')
+            if Length(Line) > 120 then
+              WriteLn(Copy(Line, 1, 120) + '...')
             else
               WriteLn(Line);
             Inc(Count);
@@ -318,7 +310,7 @@ begin
       end;
 
       WriteLn;
-      WriteLn(Format('Showing %d processes (filtered kernel threads)', [Count]));
+      WriteLn(Format('Showing %d active processes', [Count]));
 
     except
       on E: Exception do
