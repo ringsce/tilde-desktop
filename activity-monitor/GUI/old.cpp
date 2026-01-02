@@ -18,12 +18,12 @@
 
 #ifdef Q_OS_WIN
 #include <windows.h>
-#endif  Q_OS_WIN
+#endif
 
 #ifdef Q_OS_LINUX
 #include <sys/types.h>
 #include <sys/sysinfo.h>
-#endif Q_OS_LINUX
+#endif
 
 #ifdef Q_OS_MACOS
 #include <mach/mach.h>
@@ -35,7 +35,7 @@
 #include <IOKit/IOKitLib.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <pwd.h>
-#endif Q_OS_MACOS
+#endif
 
 class CPUGraphWidget : public QWidget {
     Q_OBJECT
@@ -632,12 +632,12 @@ public:
         }
 #endif
 
-
 #ifdef Q_OS_MACOS
-            QStringList SystemMonitor::getProcessList() {
+        
+        QStringList SystemMonitor::getProcessList() {
             QStringList out;
 
-            int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+            int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
             size_t size = 0;
             sysctl(mib, 4, nullptr, &size, nullptr, 0);
 
@@ -649,7 +649,7 @@ public:
 
             struct Row {
                 pid_t pid, ppid;
-                QString user, name, mem;
+                QString user, name, state, mem;
                 double cpu;
                 int threads;
             };
@@ -660,17 +660,18 @@ public:
                 pid_t pid = procs[i].kp_proc.p_pid;
                 if (pid <= 0) continue;
 
-                proc_taskinfo ti{};
+                proc_taskinfo ti;
                 if (proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &ti, sizeof(ti)) != sizeof(ti))
                     continue;
 
                 uint64_t cpuTime = ti.pti_total_user + ti.pti_total_system;
-                double cpuPercent = 0.0;
 
+                double cpuPercent = 0.0;
                 if (lastSamples.contains(pid)) {
                     auto &prev = lastSamples[pid];
-                    uint64_t deltaCpu  = cpuTime - prev.cpuTime;
+                    uint64_t deltaCpu = cpuTime - prev.cpuTime;
                     uint64_t deltaTime = now - prev.timestamp;
+
                     if (deltaTime > 0) {
                         cpuPercent =
                             (double)deltaCpu / (double)deltaTime * 100.0 *
@@ -678,7 +679,7 @@ public:
                     }
                 }
 
-                lastSamples[pid] = { cpuTime, now };
+                lastSamples[pid] = {cpuTime, now};
 
                 struct passwd *pw = getpwuid(procs[i].kp_eproc.e_ucred.cr_uid);
                 QString user = pw ? pw->pw_name : "?";
@@ -693,7 +694,8 @@ public:
                     procs[i].kp_eproc.e_ppid,
                     user.left(10),
                     QString(name).left(32),
-                    QString::number(memMB, 'f', 1) + " MB",
+                    "RUN",
+                    QString("%1 MB").arg(memMB, 0, 'f', 1),
                     cpuPercent,
                     (int)ti.pti_threadnum
                 });
@@ -718,12 +720,189 @@ public:
                            .arg(r.ppid, -6)
                            .arg(r.name);
             }
-        #else
-            out << "Process list not supported on this platform.";
-        #endif
 
             return out;
         }
+
+
+        // Get number of processes
+        int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
+        size_t size;
+        
+        if (sysctl(mib, 4, NULL, &size, NULL, 0) < 0) {
+            processes << "Error: Could not get process count";
+            processes << "This application requires macOS Big Sur 11+ or later";
+            return processes;
+        }
+
+        // Allocate buffer for process info
+        struct kinfo_proc *procs = (struct kinfo_proc *)malloc(size);
+        if (!procs) {
+            processes << "Error: Memory allocation failed";
+            return processes;
+        }
+
+        if (sysctl(mib, 4, procs, &size, NULL, 0) < 0) {
+            free(procs);
+            processes << "Error: Could not get process list";
+            return processes;
+        }
+
+        int proc_count = size / sizeof(struct kinfo_proc);
+
+        // Structure to hold process info with CPU and memory usage
+        struct ProcessInfo {
+            pid_t pid;
+            pid_t ppid;
+            uid_t uid;
+            QString username;
+            QString name;
+            QString status;
+            double cpuPercent;
+            uint64_t memoryBytes;
+            QString memoryStr;
+            int threads;
+        };
+        
+        QVector<ProcessInfo> procInfos;
+
+        // Process each entry
+        for (int i = 0; i < proc_count; i++) {
+            pid_t pid = procs[i].kp_proc.p_pid;
+            
+            // Skip zombie processes
+            if (procs[i].kp_proc.p_stat == SZOMB) {
+                continue;
+            }
+
+            ProcessInfo info;
+            info.pid = pid;
+            info.ppid = procs[i].kp_eproc.e_ppid;
+            info.uid = procs[i].kp_eproc.e_ucred.cr_uid;
+            
+            // Get username
+            struct passwd *pw = getpwuid(info.uid);
+            if (pw) {
+                info.username = QString(pw->pw_name);
+            } else {
+                info.username = QString::number(info.uid);
+            }
+            
+            // Get process name
+            char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+            char name[PROC_PIDPATHINFO_MAXSIZE];
+            
+            if (proc_pidpath(pid, pathbuf, sizeof(pathbuf)) > 0) {
+                const char *slash = strrchr(pathbuf, '/');
+                strncpy(name, slash ? slash + 1 : pathbuf, sizeof(name) - 1);
+                name[sizeof(name) - 1] = '\0';
+            } else {
+                strncpy(name, procs[i].kp_proc.p_comm, sizeof(name) - 1);
+                name[sizeof(name) - 1] = '\0';
+            }
+            info.name = QString(name);
+
+            // Get process state
+            switch (procs[i].kp_proc.p_stat) {
+                case SIDL:   info.status = "IDLE";   break;
+                case SRUN:   info.status = "RUN";    break;
+                case SSLEEP: info.status = "SLEEP";  break;
+                case SSTOP:  info.status = "STOP";   break;
+                case SZOMB:  info.status = "ZOMBIE"; break;
+                default:     info.status = "?";      break;
+            }
+
+            // Get CPU usage and memory for process
+            struct proc_taskinfo taskInfo;
+            int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, sizeof(taskInfo));
+            if (ret == sizeof(taskInfo)) {
+                // Calculate CPU percentage (total CPU time / uptime)
+                uint64_t totalTime = taskInfo.pti_total_user + taskInfo.pti_total_system;
+                //info.cpuPercent = totalTime / 10000000.0; // Convert to rough percentage
+                info.cpuPercent = (taskInfo.pti_total_user + taskInfo.pti_total_system) / 1e9;
+
+                // Get memory usage
+                info.memoryBytes = taskInfo.pti_resident_size;
+                
+                // Format memory
+                double memMB = info.memoryBytes / (1024.0 * 1024.0);
+                if (memMB < 1024.0) {
+                    info.memoryStr = QString::number(memMB, 'f', 1) + " MB";
+                } else {
+                    info.memoryStr = QString::number(memMB / 1024.0, 'f', 1) + " GB";
+                }
+                
+                // Get thread count
+                info.threads = taskInfo.pti_threadnum;
+            } else {
+                info.cpuPercent = 0.0;
+                info.memoryBytes = 0;
+                info.memoryStr = "0 MB";
+                info.threads = 0;
+            }
+
+            procInfos.append(info);
+        }
+
+        free(procs);
+
+        // Sort by CPU usage (highest first)
+        std::sort(procInfos.begin(), procInfos.end(),
+                  [](const ProcessInfo& a, const ProcessInfo& b) {
+                      return a.cpuPercent > b.cpuPercent;
+                  });
+
+        // Add system info header
+        processes << "════════════════════════════════════════════════════════════════════════════════";
+        processes << "  macOS Process Monitor - Native Implementation for Big Sur 11+ and Apple Silicon";
+        processes << "════════════════════════════════════════════════════════════════════════════════";
+        processes << "";
+
+        // Add header
+        processes << QStringLiteral(
+            "PID      USER       CPU%     MEMORY     THREADS STATUS  PPID   PROCESS NAME"
+        );
+
+        // Add sorted processes (top 150 by CPU usage)
+        int displayCount = qMin(procInfos.size(), 150);
+        for (int i = 0; i < displayCount; i++) {
+            const ProcessInfo& info = procInfos[i];
+            
+            // Truncate username if too long
+            QString username = info.username;
+            if (username.length() > 10) {
+                username = username.left(9) + "…";
+            }
+            
+            // Truncate process name if too long
+            QString processName = info.name;
+            if (processName.length() > 35) {
+                processName = processName.left(34) + "…";
+            }
+            
+            QString line = QString("%1 %2 %3 %4 %5 %6 %7 %8")
+                .arg(info.pid,        -8)
+                .arg(username,        -10)
+                .arg(info.cpuPercent, -8, 'f', 2)
+                .arg(info.memoryStr,  -10)
+                .arg(info.threads,    -7)
+                .arg(info.status,     -7)
+                .arg(info.ppid,       -6)
+                .arg(processName);
+                processes << line;
+        }
+
+        processes << QString("─").repeated(100);
+        processes << "";
+        processes << QString("📊 System Summary:");
+        processes << QString("   • Total processes: %1").arg(proc_count);
+        processes << QString("   • Active (non-zombie): %1").arg(procInfos.size());
+        processes << QString("   • Showing top %1 by CPU usage").arg(displayCount);
+        processes << QString("   • Platform: macOS Big Sur 11+ / Apple Silicon compatible");
+        processes << "";
+        processes << QString("ℹ️  Sorted by CPU usage (highest first)");
+        processes << QString("ℹ️  Native implementation using sysctl() and proc_pidinfo()");
+#endif
 
 #ifdef Q_OS_LINUX
         QProcess process;
