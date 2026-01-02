@@ -25,6 +25,17 @@
 #include <sys/sysinfo.h>
 #endif
 
+#ifdef Q_OS_MACOS
+#include <mach/mach.h>
+#include <mach/mach_host.h>
+#include <mach/host_info.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#include <libproc.h>
+#include <IOKit/IOKitLib.h>
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+
 class CPUGraphWidget : public QWidget {
     Q_OBJECT
 private:
@@ -89,12 +100,80 @@ protected:
     }
 };
 
+class GPUGraphWidget : public QWidget {
+    Q_OBJECT
+private:
+    QVector<int> gpuHistory;
+    int maxHistory;
+
+public:
+    GPUGraphWidget(QWidget *parent = nullptr) : QWidget(parent), maxHistory(100) {
+        gpuHistory.resize(maxHistory);
+        gpuHistory.fill(0);
+        setMinimumHeight(300);
+    }
+
+    void addGPUValue(int value) {
+        gpuHistory.pop_front();
+        gpuHistory.append(qBound(0, value, 100));
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *) override {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // Background
+        painter.fillRect(rect(), Qt::black);
+
+        // Grid lines
+        painter.setPen(QPen(QColor(40, 40, 40), 1));
+        for (int i = 0; i <= 4; i++) {
+            int y = height() * i / 4;
+            painter.drawLine(0, y, width(), y);
+        }
+
+        // GPU line graph
+        if (gpuHistory.size() < 2) return;
+
+        painter.setPen(QPen(QColor(255, 165, 0), 2)); // Orange
+        
+        double xScale = (double)width() / (maxHistory - 1);
+        double yScale = (double)height() / 100.0;
+
+        for (int i = 0; i < gpuHistory.size() - 1; i++) {
+            int x1 = i * xScale;
+            int y1 = height() - (gpuHistory[i] * yScale);
+            int x2 = (i + 1) * xScale;
+            int y2 = height() - (gpuHistory[i + 1] * yScale);
+            painter.drawLine(x1, y1, x2, y2);
+        }
+
+        // Labels
+        painter.setPen(QColor(255, 165, 0));
+        painter.drawText(10, 20, "GPU History Graph");
+        
+        painter.setPen(Qt::white);
+        QFont font = painter.font();
+        font.setPointSize(8);
+        painter.setFont(font);
+        painter.drawText(10, height() - 10, "0%");
+        painter.drawText(10, 20, "100%");
+        painter.drawText(width() - 60, height() - 10, "Time →");
+    }
+};
+
 class SystemMonitor : public QObject {
     Q_OBJECT
 private:
 #ifdef Q_OS_WIN
     ULONGLONG lastIdleTime, lastKernelTime, lastUserTime;
-#else
+#endif
+#ifdef Q_OS_MACOS
+    unsigned long long lastTotalTicks, lastIdleTicks;
+#endif
+#ifdef Q_OS_LINUX
     unsigned long long lastTotalTime, lastIdleTime;
 #endif
 
@@ -104,7 +183,12 @@ public:
         lastIdleTime = 0;
         lastKernelTime = 0;
         lastUserTime = 0;
-#else
+#endif
+#ifdef Q_OS_MACOS
+        lastTotalTicks = 0;
+        lastIdleTicks = 0;
+#endif
+#ifdef Q_OS_LINUX
         lastTotalTime = 0;
         lastIdleTime = 0;
 #endif
@@ -144,8 +228,41 @@ public:
         lastKernelTime = sysKernel;
         lastUserTime = sysUser;
         return 0;
-#else
-        // Unix/Linux/macOS
+#endif
+
+#ifdef Q_OS_MACOS
+        host_cpu_load_info_data_t cpuInfo;
+        mach_msg_type_number_t count = HOST_CPU_LOAD_INFO_COUNT;
+        
+        if (host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO,
+                           (host_info_t)&cpuInfo, &count) != KERN_SUCCESS) {
+            return 0;
+        }
+
+        unsigned long long totalTicks = 0;
+        for (int i = 0; i < CPU_STATE_MAX; i++) {
+            totalTicks += cpuInfo.cpu_ticks[i];
+        }
+        unsigned long long idleTicks = cpuInfo.cpu_ticks[CPU_STATE_IDLE];
+
+        if (lastTotalTicks > 0) {
+            unsigned long long totalDelta = totalTicks - lastTotalTicks;
+            unsigned long long idleDelta = idleTicks - lastIdleTicks;
+
+            if (totalDelta > 0) {
+                int usage = (int)(100.0 * (1.0 - ((double)idleDelta / totalDelta)));
+                lastTotalTicks = totalTicks;
+                lastIdleTicks = idleTicks;
+                return qBound(0, usage, 100);
+            }
+        }
+
+        lastTotalTicks = totalTicks;
+        lastIdleTicks = idleTicks;
+        return 0;
+#endif
+
+#ifdef Q_OS_LINUX
         QFile file("/proc/stat");
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             return 0;
@@ -187,6 +304,7 @@ public:
         lastIdleTime = currentIdle;
         return 0;
 #endif
+        return 0;
     }
 
     int getMemoryUsage() {
@@ -197,8 +315,42 @@ public:
             return (int)memStatus.dwMemoryLoad;
         }
         return 0;
-#else
-        // Unix/Linux/macOS
+#endif
+
+#ifdef Q_OS_MACOS
+        vm_size_t page_size;
+        vm_statistics64_data_t vm_stats;
+        mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+        
+        if (host_page_size(mach_host_self(), &page_size) != KERN_SUCCESS) {
+            return 0;
+        }
+        
+        if (host_statistics64(mach_host_self(), HOST_VM_INFO64,
+                             (host_info64_t)&vm_stats, &count) != KERN_SUCCESS) {
+            return 0;
+        }
+
+        // Get physical memory size
+        int mib[2] = {CTL_HW, HW_MEMSIZE};
+        uint64_t physical_memory;
+        size_t length = sizeof(physical_memory);
+        if (sysctl(mib, 2, &physical_memory, &length, NULL, 0) != 0) {
+            return 0;
+        }
+
+        // Calculate used memory
+        uint64_t used_memory = ((uint64_t)vm_stats.active_count +
+                                (uint64_t)vm_stats.inactive_count +
+                                (uint64_t)vm_stats.wire_count) * (uint64_t)page_size;
+
+        if (physical_memory > 0) {
+            return (int)((double)used_memory / physical_memory * 100.0);
+        }
+        return 0;
+#endif
+
+#ifdef Q_OS_LINUX
         QFile file("/proc/meminfo");
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             return 50;
@@ -235,6 +387,7 @@ public:
         }
         return 50;
 #endif
+        return 0;
     }
 
     QString getMemoryStats() {
@@ -247,8 +400,42 @@ public:
             return QString("%1 GB / %2 GB").arg(usedGB, 0, 'f', 1).arg(totalGB, 0, 'f', 1);
         }
         return "N/A";
-#else
-        // Unix/Linux/macOS
+#endif
+
+#ifdef Q_OS_MACOS
+        vm_size_t page_size;
+        vm_statistics64_data_t vm_stats;
+        mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+        
+        if (host_page_size(mach_host_self(), &page_size) != KERN_SUCCESS) {
+            return "N/A";
+        }
+        
+        if (host_statistics64(mach_host_self(), HOST_VM_INFO64,
+                             (host_info64_t)&vm_stats, &count) != KERN_SUCCESS) {
+            return "N/A";
+        }
+
+        // Get physical memory size
+        int mib[2] = {CTL_HW, HW_MEMSIZE};
+        uint64_t physical_memory;
+        size_t length = sizeof(physical_memory);
+        if (sysctl(mib, 2, &physical_memory, &length, NULL, 0) != 0) {
+            return "N/A";
+        }
+
+        // Calculate used memory
+        uint64_t used_memory = ((uint64_t)vm_stats.active_count +
+                                (uint64_t)vm_stats.inactive_count +
+                                (uint64_t)vm_stats.wire_count) * (uint64_t)page_size;
+
+        double totalGB = physical_memory / (1024.0 * 1024.0 * 1024.0);
+        double usedGB = used_memory / (1024.0 * 1024.0 * 1024.0);
+        
+        return QString("%1 GB / %2 GB").arg(usedGB, 0, 'f', 1).arg(totalGB, 0, 'f', 1);
+#endif
+
+#ifdef Q_OS_LINUX
         QFile file("/proc/meminfo");
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             return "N/A";
@@ -276,18 +463,304 @@ public:
         }
         return "N/A";
 #endif
+        return "N/A";
+    }
+
+    int getGPUUsage() {
+#ifdef Q_OS_MACOS
+        // Get IOService for AGXAccelerator (Apple Silicon GPU)
+        io_iterator_t iterator;
+        kern_return_t result = IOServiceGetMatchingServices(
+            kIOMasterPortDefault,
+            IOServiceMatching("AGXAccelerator"),
+            &iterator
+        );
+
+        if (result != kIOReturnSuccess) {
+            // Try for AMD/Intel GPU on older Macs
+            result = IOServiceGetMatchingServices(
+                kIOMasterPortDefault,
+                IOServiceMatching("IOAccelerator"),
+                &iterator
+            );
+            if (result != kIOReturnSuccess) {
+                return 0;
+            }
+        }
+
+        io_registry_entry_t service;
+        int gpuUsage = 0;
+        
+        while ((service = IOIteratorNext(iterator))) {
+            CFMutableDictionaryRef properties = NULL;
+            result = IORegistryEntryCreateCFProperties(
+                service,
+                &properties,
+                kCFAllocatorDefault,
+                kNilOptions
+            );
+
+            if (result == kIOReturnSuccess && properties) {
+                // Try to get GPU utilization
+                CFNumberRef utilization = (CFNumberRef)CFDictionaryGetValue(
+                    properties,
+                    CFSTR("PerformanceStatistics")
+                );
+                
+                if (utilization) {
+                    // This is a simplified approach
+                    // Real GPU usage requires parsing PerformanceStatistics dictionary
+                    CFDictionaryRef perfStats = (CFDictionaryRef)CFDictionaryGetValue(
+                        properties,
+                        CFSTR("PerformanceStatistics")
+                    );
+                    
+                    if (perfStats) {
+                        CFNumberRef deviceUtil = (CFNumberRef)CFDictionaryGetValue(
+                            perfStats,
+                            CFSTR("Device Utilization %")
+                        );
+                        
+                        if (deviceUtil) {
+                            int util;
+                            CFNumberGetValue(deviceUtil, kCFNumberIntType, &util);
+                            gpuUsage = qMax(gpuUsage, util);
+                        }
+                    }
+                }
+                
+                CFRelease(properties);
+            }
+            
+            IOObjectRelease(service);
+        }
+        
+        IOObjectRelease(iterator);
+        return qBound(0, gpuUsage, 100);
+#else
+        // For non-macOS platforms, return 0 or implement platform-specific code
+        return 0;
+#endif
+    }
+
+    QString getGPUInfo() {
+#ifdef Q_OS_MACOS
+        io_iterator_t iterator;
+        kern_return_t result = IOServiceGetMatchingServices(
+            kIOMasterPortDefault,
+            IOServiceMatching("AGXAccelerator"),
+            &iterator
+        );
+
+        if (result != kIOReturnSuccess) {
+            result = IOServiceGetMatchingServices(
+                kIOMasterPortDefault,
+                IOServiceMatching("IOAccelerator"),
+                &iterator
+            );
+            if (result != kIOReturnSuccess) {
+                return "GPU: N/A";
+            }
+        }
+
+        io_registry_entry_t service;
+        QString gpuInfo = "GPU: ";
+        
+        while ((service = IOIteratorNext(iterator))) {
+            CFMutableDictionaryRef properties = NULL;
+            result = IORegistryEntryCreateCFProperties(
+                service,
+                &properties,
+                kCFAllocatorDefault,
+                kNilOptions
+            );
+
+            if (result == kIOReturnSuccess && properties) {
+                // Try to get model name
+                CFStringRef model = (CFStringRef)CFDictionaryGetValue(
+                    properties,
+                    CFSTR("model")
+                );
+                
+                if (!model) {
+                    model = (CFStringRef)CFDictionaryGetValue(
+                        properties,
+                        CFSTR("IOClass")
+                    );
+                }
+                
+                if (model) {
+                    char modelStr[256];
+                    CFStringGetCString(model, modelStr, sizeof(modelStr), kCFStringEncodingUTF8);
+                    gpuInfo = QString("GPU: %1").arg(modelStr);
+                }
+                
+                CFRelease(properties);
+            }
+            
+            IOObjectRelease(service);
+            break; // Just get first GPU
+        }
+        
+        IOObjectRelease(iterator);
+        return gpuInfo;
+#else
+        return "GPU: N/A";
+#endif
     }
 
     QStringList getProcessList() {
         QStringList processes;
-        QProcess process;
 
 #ifdef Q_OS_WIN
+        QProcess process;
         process.start("tasklist", QStringList());
-#else
-        // Unix/Linux/macOS
-        process.start("/bin/ps", QStringList() << "aux");
+
+        if (!process.waitForFinished(5000)) {
+            processes << "Error: Process list timeout";
+            return processes;
+        }
+
+        QString output = process.readAllStandardOutput();
+        QStringList lines = output.split('\n');
+
+        for (const QString& line : lines) {
+            if (line.trimmed().isEmpty()) continue;
+            processes << line;
+            if (processes.size() >= 200) break;
+        }
 #endif
+
+#ifdef Q_OS_MACOS
+        // Get number of processes
+        int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
+        size_t size;
+        
+        if (sysctl(mib, 4, NULL, &size, NULL, 0) < 0) {
+            processes << "Error: Could not get process count";
+            return processes;
+        }
+
+        // Allocate buffer for process info
+        struct kinfo_proc *procs = (struct kinfo_proc *)malloc(size);
+        if (!procs) {
+            processes << "Error: Memory allocation failed";
+            return processes;
+        }
+
+        if (sysctl(mib, 4, procs, &size, NULL, 0) < 0) {
+            free(procs);
+            processes << "Error: Could not get process list";
+            return processes;
+        }
+
+        int proc_count = size / sizeof(struct kinfo_proc);
+
+        // Structure to hold process info with CPU usage
+        struct ProcessInfo {
+            pid_t pid;
+            pid_t ppid;
+            uid_t uid;
+            QString name;
+            QString status;
+            double cpuPercent;
+        };
+        
+        QVector<ProcessInfo> procInfos;
+
+        // Process each entry
+        for (int i = 0; i < proc_count; i++) {
+            pid_t pid = procs[i].kp_proc.p_pid;
+            
+            // Skip zombie processes
+            if (procs[i].kp_proc.p_stat == SZOMB) {
+                continue;
+            }
+
+            ProcessInfo info;
+            info.pid = pid;
+            info.ppid = procs[i].kp_eproc.e_ppid;
+            info.uid = procs[i].kp_eproc.e_ucred.cr_uid;
+            
+            // Get process name
+            char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+            char name[PROC_PIDPATHINFO_MAXSIZE];
+            
+            if (proc_pidpath(pid, pathbuf, sizeof(pathbuf)) > 0) {
+                const char *slash = strrchr(pathbuf, '/');
+                strncpy(name, slash ? slash + 1 : pathbuf, sizeof(name) - 1);
+                name[sizeof(name) - 1] = '\0';
+            } else {
+                strncpy(name, procs[i].kp_proc.p_comm, sizeof(name) - 1);
+                name[sizeof(name) - 1] = '\0';
+            }
+            info.name = QString(name);
+
+            // Get process state
+            switch (procs[i].kp_proc.p_stat) {
+                case SIDL:   info.status = "IDLE";   break;
+                case SRUN:   info.status = "RUN";    break;
+                case SSLEEP: info.status = "SLEEP";  break;
+                case SSTOP:  info.status = "STOP";   break;
+                case SZOMB:  info.status = "ZOMBIE"; break;
+                default:     info.status = "?";      break;
+            }
+
+            // Get CPU usage for process
+            struct proc_taskinfo taskInfo;
+            int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, sizeof(taskInfo));
+            if (ret == sizeof(taskInfo)) {
+                // Calculate CPU percentage (simplified)
+                info.cpuPercent = (taskInfo.pti_total_user + taskInfo.pti_total_system) / 1000000.0;
+            } else {
+                info.cpuPercent = 0.0;
+            }
+
+            procInfos.append(info);
+        }
+
+        free(procs);
+
+        // Sort by CPU usage (highest first)
+        std::sort(procInfos.begin(), procInfos.end(),
+                  [](const ProcessInfo& a, const ProcessInfo& b) {
+                      return a.cpuPercent > b.cpuPercent;
+                  });
+
+        // Add header
+        processes << QString("%-8s %-8s %-6s %-7s %-6s %-30s")
+                     .arg("PID")
+                     .arg("PPID")
+                     .arg("UID")
+                     .arg("CPU%")
+                     .arg("STATUS")
+                     .arg("NAME");
+        processes << QString("-").repeated(75);
+
+        // Add sorted processes
+        for (int i = 0; i < procInfos.size() && processes.size() < 200; i++) {
+            const ProcessInfo& info = procInfos[i];
+            
+            QString line = QString("%-8d %-8d %-6d %-7.1f %-6s %s")
+                          .arg(info.pid)
+                          .arg(info.ppid)
+                          .arg(info.uid)
+                          .arg(info.cpuPercent)
+                          .arg(info.status)
+                          .arg(info.name);
+            
+            processes << line;
+        }
+
+        processes << "";
+        processes << QString("Total processes: %1 (showing %2, sorted by CPU usage)")
+                     .arg(proc_count)
+                     .arg(qMin(procInfos.size(), 200));
+#endif
+
+#ifdef Q_OS_LINUX
+        QProcess process;
+        process.start("/bin/ps", QStringList() << "aux");
 
         if (!process.waitForFinished(5000)) {
             processes << "Error: Process list timeout";
@@ -300,18 +773,18 @@ public:
         for (const QString& line : lines) {
             if (line.trimmed().isEmpty()) continue;
 
-#ifndef Q_OS_WIN
-            // Filter out kernel threads on Unix/Linux/macOS
+            // Filter out kernel threads
             if (line.contains("[kworker") || line.contains("[migration") ||
                 line.contains("[ksoftirqd") || line.contains("[rcu_") ||
                 line.contains("[watchdog") || line.contains("[cpuhp") ||
                 line.contains("[kthreadd")) {
                 continue;
             }
-#endif
+            
             processes << line;
             if (processes.size() >= 200) break;
         }
+#endif
 
         return processes;
     }
@@ -331,7 +804,12 @@ private:
     QLabel *memoryPercentLabel;
     QLabel *memoryStatsLabel;
     QProgressBar *memoryProgressBar;
+    QLabel *gpuLabel;
+    QLabel *gpuPercentLabel;
+    QLabel *gpuInfoLabel;
+    QProgressBar *gpuProgressBar;
     CPUGraphWidget *cpuGraph;
+    GPUGraphWidget *gpuGraph;
     
     QTextEdit *processTextEdit;
     
@@ -488,6 +966,49 @@ private:
         
         layout->addWidget(memWidget);
 
+        // GPU Usage section
+        QWidget *gpuWidget = new QWidget();
+        gpuWidget->setStyleSheet("QWidget { background-color: #f0f0f0; border-radius: 5px; padding: 15px; }");
+        QVBoxLayout *gpuLayout = new QVBoxLayout(gpuWidget);
+        
+        QLabel *gpuTitle = new QLabel("GPU Usage");
+        gpuTitle->setStyleSheet("font-size: 16px; font-weight: bold; color: #333;");
+        gpuLayout->addWidget(gpuTitle);
+        
+        QHBoxLayout *gpuInfoLayout = new QHBoxLayout();
+        gpuLabel = new QLabel("Current GPU Usage:");
+        gpuLabel->setStyleSheet("font-size: 12px;");
+        gpuPercentLabel = new QLabel("0%");
+        gpuPercentLabel->setStyleSheet("font-size: 14px; font-weight: bold; color: #0066cc;");
+        gpuInfoLayout->addWidget(gpuLabel);
+        gpuInfoLayout->addWidget(gpuPercentLabel);
+        gpuInfoLayout->addStretch();
+        gpuLayout->addLayout(gpuInfoLayout);
+        
+        gpuProgressBar = new QProgressBar();
+        gpuProgressBar->setMinimum(0);
+        gpuProgressBar->setMaximum(100);
+        gpuProgressBar->setTextVisible(false);
+        gpuProgressBar->setStyleSheet(R"(
+            QProgressBar {
+                border: 2px solid #ccc;
+                border-radius: 5px;
+                text-align: center;
+                height: 25px;
+            }
+            QProgressBar::chunk {
+                background-color: #FF9800;
+                border-radius: 3px;
+            }
+        )");
+        gpuLayout->addWidget(gpuProgressBar);
+        
+        gpuInfoLabel = new QLabel("GPU: N/A");
+        gpuInfoLabel->setStyleSheet("font-size: 11px; color: #666; margin-top: 5px;");
+        gpuLayout->addWidget(gpuInfoLabel);
+        
+        layout->addWidget(gpuWidget);
+
         // CPU History Graph
         QWidget *graphWidget = new QWidget();
         graphWidget->setStyleSheet("QWidget { background-color: #f0f0f0; border-radius: 5px; padding: 15px; }");
@@ -501,6 +1022,20 @@ private:
         graphLayout->addWidget(cpuGraph);
         
         layout->addWidget(graphWidget);
+
+        // GPU History Graph
+        QWidget *gpuGraphWidget = new QWidget();
+        gpuGraphWidget->setStyleSheet("QWidget { background-color: #f0f0f0; border-radius: 5px; padding: 15px; }");
+        QVBoxLayout *gpuGraphLayout = new QVBoxLayout(gpuGraphWidget);
+        
+        QLabel *gpuGraphTitle = new QLabel("GPU History Graph");
+        gpuGraphTitle->setStyleSheet("font-size: 16px; font-weight: bold; color: #333;");
+        gpuGraphLayout->addWidget(gpuGraphTitle);
+        
+        gpuGraph = new GPUGraphWidget();
+        gpuGraphLayout->addWidget(gpuGraph);
+        
+        layout->addWidget(gpuGraphWidget);
 
         stackedWidget->addWidget(overviewWidget);
     }
@@ -547,7 +1082,9 @@ private slots:
     void updateStats() {
         int cpuUsage = monitor->getCPUUsage();
         int memUsage = monitor->getMemoryUsage();
+        int gpuUsage = monitor->getGPUUsage();
         QString memStats = monitor->getMemoryStats();
+        QString gpuInfo = monitor->getGPUInfo();
 
         cpuPercentLabel->setText(QString("%1%").arg(cpuUsage));
         cpuProgressBar->setValue(cpuUsage);
@@ -585,7 +1122,26 @@ private slots:
             }
         )").arg(memColor));
 
+        gpuPercentLabel->setText(QString("%1%").arg(gpuUsage));
+        gpuProgressBar->setValue(gpuUsage);
+        gpuInfoLabel->setText(gpuInfo);
+        
+        QString gpuColor = gpuUsage > 75 ? "#f44336" : (gpuUsage > 50 ? "#ff9800" : "#FF9800");
+        gpuProgressBar->setStyleSheet(QString(R"(
+            QProgressBar {
+                border: 2px solid #ccc;
+                border-radius: 5px;
+                text-align: center;
+                height: 25px;
+            }
+            QProgressBar::chunk {
+                background-color: %1;
+                border-radius: 3px;
+            }
+        )").arg(gpuColor));
+
         cpuGraph->addCPUValue(cpuUsage);
+        gpuGraph->addGPUValue(gpuUsage);
     }
 
     void refreshProcessList() {
